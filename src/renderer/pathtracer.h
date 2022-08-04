@@ -20,8 +20,7 @@ class Pathtracer : public Renderer{
     }
 
     static float russian_roulette(const Vec3& col){
-        
-        //LOL this is not LAB ahahahah
+        //Todo: better rr
         return (col.x*0.2 + col.y*0.5 +col.z*0.3)*0.5 + 0.4;
     }
 
@@ -40,10 +39,12 @@ class Pathtracer : public Renderer{
             } else {
                 col =  col + mul* intersection.material->emit(ray.d*(-1.0),intersection);
                 Vec3 sample_direction;
+                
                 float p = intersection.material->sample(sampler, ray.d*(-1.0), intersection, &sample_direction);
                 if(p<=0.0){
                     break;
                 }
+
                 Vec3 eval = intersection.material->eval(ray.d*(-1.0), sample_direction, intersection);
                 if(i>2){
                     float rr = russian_roulette(eval);
@@ -52,6 +53,7 @@ class Pathtracer : public Renderer{
                     }
                     p = p*rr;
                 }
+
                 mul = mul*eval/p;
                 ray = Ray(intersection.hitpoint, sample_direction);
             }

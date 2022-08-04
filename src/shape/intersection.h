@@ -10,7 +10,7 @@ namespace cpppt{
 
 struct Intersection{
     Vec3 texture_coords;
-    Vec3 binormal;
+    Vec3 bitangent;
     Vec3 tangent;
     Vec3 normal;
     Vec3 hitpoint;

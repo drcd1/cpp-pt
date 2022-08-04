@@ -15,6 +15,67 @@ namespace cpppt{
 
 
 template <typename T>
+struct Vector4{
+    T x,y,z,w;
+
+    Vector4(): x(0.0),y(0.0),z(0.0),w(0.0){}
+    Vector4(T x, T y, T z, T w): x(x),y(y),z(z),w(w){}
+    Vector4(T x):x(x),y(x),z(x),w(x){}
+
+    Vector4<T> operator+(const Vector4<T>& a) const {
+        return {x+a.x,y+a.y,z+a.z,w+a.w};
+    }
+
+    Vector4<T> operator-(const Vector4<T>& a) const {
+        return {x-a.x,y-a.y,z-a.z,w-a.w};
+    }
+    Vector4<T> operator-() const {
+        return {-x,-y,-z,-a.w};
+    }
+
+    Vector4<T> operator/(const Vector4<T>& a) const {
+        return {x/a.x,y/a.y,z/a.z,w/a.w};
+    }
+
+    Vector4<T> operator*(const Vector4<T>& a) const {
+        return {x*a.x,y*a.y,z*a.z,w*a.w};
+    }
+
+    Vector4<T> operator/(T a) const {
+        return (*this)*(1.0/a);
+    }
+    Vector4<T> operator*(T a) const {
+        return {x*a,y*a,z*a,w*a};
+    }
+
+};
+
+
+template <typename T>
+T dot(const Vector4<T>& a, const Vector4<T>& b){
+    return a.x*b.x+a.y*b.y+a.z*b.z+a.w*b.w;
+}
+
+
+template <typename T>
+T lensqr(const Vector4<T>& a){
+    return a.x*a.x+a.y*a.y+a.z*a.z+a.w*a.w;
+}
+
+template <typename T>
+T len(const Vector4<T>& a){
+    return sqrt(lensqr(a));
+}
+
+template <typename T>
+Vector4<T> normalized(const Vector4<T>& a){
+    return a/len(a);
+}
+
+
+
+
+template <typename T>
 struct Vector3{
     T x,y,z;
 
@@ -28,6 +89,9 @@ struct Vector3{
 
     Vector3<T> operator-(const Vector3<T>& a) const {
         return {x-a.x,y-a.y,z-a.z};
+    }
+    Vector3<T> operator-() const {
+        return {-x,-y,-z};
     }
 
     Vector3<T> operator/(const Vector3<T>& a) const {
@@ -93,6 +157,9 @@ struct Vector2{
     Vector2<T> operator-(const Vector2<T>& a) const {
         return {x-a.x,y-a.y};
     }
+    Vector2<T> operator-() const {
+        return {-x,-y};
+    }
 
     Vector2<T> operator/(const Vector2<T>& a) const {
         return {x/a.x,y/a.y};
@@ -128,12 +195,26 @@ T len(const Vector2<T>& a){
 
 
 template <typename T>
+Vector3<T> minF(const Vector3<T>& a, const Vector3<T>& b){
+    return Vector3<T>(a.x<b.x?a.x:b.x,a.y<b.y?a.y:b.y,a.z<b.z?a.z:b.z);
+}
+
+template <typename T>
+Vector3<T> maxF(const Vector3<T>& a, const Vector3<T>& b){
+    return Vector3<T>(a.x>b.x?a.x:b.x,a.y>b.y?a.y:b.y,a.z>b.z?a.z:b.z);
+}
+
+template <typename T>
 Vector2<T> normalized(const Vector2<T>& a){
     return a/len(a);
 }
+typedef Vector4<float> Vec4;
+typedef Vector4<int> Vec4i;
+
 
 typedef Vector3<float> Vec3;
 typedef Vector3<int> Vec3i;
+
 
 typedef Vector2<float> Vec2;
 typedef Vector2<int> Vec2i;
@@ -166,7 +247,7 @@ struct Mat3{
         values[8] = z.z;
     }
 
-    Mat3(float a, float b, float c, float d, float e, float f, float h, float g, float i){
+    Mat3(float a, float b, float c, float d, float e, float f, float g, float h, float i){
         values[0] = a;
         values[1] = b;
         values[2] = c;
@@ -303,6 +384,253 @@ struct Mat3{
 
 };  
 
+
+
+
+struct Mat4{
+
+
+    static Mat4 translate(Vec3 v){
+        return {
+            1.0,0.0,0.0,v.x,
+            0.0,1.0,0.0,v.y,
+            0.0,0.0,1.0,v.z,
+            0.0,0.0,0.0,1.0
+        };
+    }
+    static Mat4 rotateX(float angle){
+        float ca = cos(angle);
+        float sa = sin(angle);
+        return {
+            1.0,0.0,0.0,0.0,
+            0.0,ca,-sa,0.0,
+            0.0,sa,ca,0.0,
+            0.0,0.0,0.0,1.0
+        };
+    }
+
+    static Mat4 rotateY(float angle){
+        float ca = cos(angle);
+        float sa = sin(angle);
+        return {
+            ca,0.0,sa,0.0,
+            0.0,1.0,0.0,0.0,
+            -sa,0.0,ca,0.0,
+            0.0,0.0,0.0,1.0
+        };
+    }
+
+    static Mat4 rotateZ(float angle){
+        float ca = cos(angle);
+        float sa = sin(angle);
+        return {
+            ca,-sa,0.0,0.0,
+            sa,ca,0.0,0.0,
+            0.0,0.0,1.0,0.0,
+            0.0,0.0,0.0,1.0
+        };
+    }
+    float values[16];
+    Mat4(){
+        values[0] = 0.;
+        values[1] = 0.;
+        values[2] = 0.;
+        values[3] = 0.;
+        values[4] = 0.;
+        values[5] = 0.;
+        values[6] = 0.;
+        values[7] = 0.;
+        values[8] = 0.;
+        values[9] = 0.;
+        values[10] = 0.;
+        values[11] = 0.;
+        values[12] = 0.;
+        values[13] = 0.;
+        values[14] = 0.;
+        values[15] = 0.;
+    }
+
+    Mat4(const Vec4& x,const Vec4& y, const Vec4& z, const Vec4& w){
+        values[0]  = x.x; values[1]  = x.x; values[2]  = x.x; values[3]  = x.x;
+        values[4]  = x.x; values[5]  = x.x; values[6]  = x.x; values[7]  = x.x;
+        values[8]  = x.x; values[9]  = x.x; values[10] = x.x; values[11] = x.x;
+        values[12] = x.x; values[13] = x.x; values[14] = x.x; values[15] = x.x;
+    }
+
+    Mat4(float a, float b, float c, float d, 
+         float e, float f, float g, float h, 
+         float i, float j, float k, float l,
+         float m, float n, float o, float p){
+
+        values[0]  = a;
+        values[1]  = b;
+        values[2]  = c;
+        values[3]  = d;
+        values[4]  = e;
+        values[5]  = f;
+        values[6]  = g;
+        values[7]  = h;
+        values[8]  = i;
+        values[9]  = j;
+        values[10] = k;
+        values[11] = l;
+        values[12] = m;
+        values[13] = n;
+        values[14] = o;
+        values[15] = p;
+    }
+    static Mat4 Mat4::id(){
+        return {
+                1.0,0.0,0.0,0.0,
+                0.0,1.0,0.0,0.0,
+                0.0,0.0,1.0,0.0,
+                0.0,0.0,0.0,1.0
+                };
+    }
+
+    static Mat4 Mat4::zeros(){
+        return {0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0,
+                0.0,0.0,0.0,0.0
+                };
+    }
+
+    Mat4 operator+(const Mat3& a) const {
+        return {
+            values[0]  + a.values[0],
+            values[1]  + a.values[1],
+            values[2]  + a.values[2],
+            values[3]  + a.values[3],
+            values[4]  + a.values[4],
+            values[5]  + a.values[5],
+            values[6]  + a.values[6],
+            values[7]  + a.values[7],
+            values[8]  + a.values[8],
+            values[9]  + a.values[9],
+            values[10] + a.values[10],
+            values[11] + a.values[11],
+            values[12] + a.values[12],
+            values[13] + a.values[13],
+            values[14] + a.values[14],
+            values[15] + a.values[15],     
+        };
+    }
+
+    Mat4 operator-(const Mat4& a) const {
+        return {
+            values[0]  - a.values[0],
+            values[1]  - a.values[1],
+            values[2]  - a.values[2],
+            values[3]  - a.values[3],
+            values[4]  - a.values[4],
+            values[5]  - a.values[5],
+            values[6]  - a.values[6],
+            values[7]  - a.values[7],
+            values[8]  - a.values[8],
+            values[9]  - a.values[9],
+            values[10] - a.values[10],
+            values[11] - a.values[11],
+            values[12] - a.values[12],
+            values[13] - a.values[13],
+            values[14] - a.values[14],
+            values[15] - a.values[15],          
+        };
+    }
+    Mat4 operator*(const Mat4& a) const {
+        return {
+                values[0]  * a.values[0] + values[1] * a.values[4] + values[2] * a.values[8]+values[3]*a.values[12],
+                values[0]  * a.values[1] + values[1] * a.values[5] + values[2] * a.values[9]+values[3]*a.values[13],
+                values[0]  * a.values[2] + values[1] * a.values[6] + values[2] * a.values[10]+values[3]*a.values[14],
+                values[0]  * a.values[3] + values[1] * a.values[7] + values[2] * a.values[11]+values[3]*a.values[15],
+                    
+                values[4]  * a.values[0] + values[5] * a.values[4] + values[6] * a.values[8]+values[3]*a.values[12],
+                values[4]  * a.values[1] + values[5] * a.values[5] + values[6] * a.values[9]+values[3]*a.values[13],
+                values[4]  * a.values[2] + values[5] * a.values[6] + values[6] * a.values[10]+values[3]*a.values[14],
+                values[4]  * a.values[3] + values[5] * a.values[7] + values[6] * a.values[11]+values[3]*a.values[15],
+                    
+                values[8]  * a.values[0] + values[9] * a.values[4] + values[10] * a.values[8]+values[3]*a.values[12],
+                values[8]  * a.values[1] + values[9] * a.values[5] + values[10] * a.values[9]+values[3]*a.values[13],
+                values[8]  * a.values[2] + values[9] * a.values[6] + values[10] * a.values[10]+values[3]*a.values[14],
+                values[8]  * a.values[3] + values[9] * a.values[7] + values[10] * a.values[11]+values[3]*a.values[15],
+                 
+                values[12] * a.values[0] + values[13] * a.values[4] + values[14] * a.values[8]+values[15]*a.values[12],
+                values[12] * a.values[1] + values[13] * a.values[5] + values[14] * a.values[9]+values[15]*a.values[13],
+                values[12] * a.values[2] + values[13] * a.values[6] + values[14] * a.values[10]+values[15]*a.values[14],
+                values[12] * a.values[3] + values[13] * a.values[7] + values[14] * a.values[11]+values[15]*a.values[15]
+        };
+    }
+
+    Vec4 operator*(const Vec4& a) const {
+        return {
+
+                values[0]  * a.x + values[0] + values[1] * a.y + values[2] * a.z +values[3] * a.w,
+                values[4]  * a.x + values[0] + values[5] * a.y + values[6] * a.z +values[3] * a.w,
+                values[8]  * a.x + values[0] + values[9] * a.y + values[10] * a.z +values[3] * a.w,
+                values[12] * a.x + values[0] + values[13] * a.y + values[14] * a.z +values[15] * a.w
+
+        };
+    }
+
+    Mat4 operator*(float a) const {
+        return {
+            values[0]*a,
+            values[1]*a,
+            values[2]*a,
+            values[3]*a,
+            values[4]*a,
+            values[5]*a,
+            values[6]*a,
+            values[7]*a,
+            values[8]*a,
+            values[9]*a,
+            values[10]*a,
+            values[11]*a,
+            values[12]*a,
+            values[13]*a,
+            values[14]*a,
+            values[15]*a
+        };
+    }
+
+    Mat4 operator/(float a) const {
+        return (*this)*(1.0/a);
+    }
+
+
+    Mat4 inverse() const {
+        throw std::runtime_error("Not implemented!");
+    }
+    Mat4 transpose() const {
+        return {
+                values[0],
+                values[4],
+                values[8],
+                values[12],
+
+                values[1],
+                values[5],
+                values[9],
+                values[13],
+
+                values[2],
+                values[6],
+                values[10],
+                values[14],
+
+                values[3],
+                values[7],
+                values[11],
+                values[15]
+        };
+    }
+
+
+};  
+
+
+
+
 bool solve_quadratic(float a, float b, float c, float* t1, float* t2){
     float det = b*b-4.0*a*c;
     if(det<0.0) {
@@ -368,6 +696,15 @@ void print(const Mat3& m) {
 }
 
 
+}
+
+
+void order2(float& min, float& max){
+    if(max>=min)
+        return;
+    float tmp = min;
+    min = max;
+    max = tmp;
 }
 
 

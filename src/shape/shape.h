@@ -3,14 +3,19 @@
 
 #include <shape/intersection.h>
 #include <primitive/ray.h>
+#include <primitive/aabb.h>
 #include <iostream>
 namespace cpppt{
+
     class Shape {
         public:
         virtual bool intersect(Ray& r, Intersection* it) const = 0;
         virtual bool intersectAny(Ray& r) const = 0;
+        virtual AABB get_bounds() const = 0;
 
     };
+
+
 
     class Sphere: public Shape {
     private:
@@ -18,6 +23,11 @@ namespace cpppt{
         float radius;
         public:
         Sphere(Vec3 o, float r): origin(o),radius(r){}
+
+        AABB get_bounds() const {
+            return AABB(origin-Vec3(radius),origin+Vec3(radius));
+        }
+
         bool intersect(Ray& r, Intersection* it) const {
 
            Vec3 ro = r.o - origin;
@@ -68,6 +78,7 @@ namespace cpppt{
         bool intersectAny(Ray& r) const {
             return false;
         }
+
     };
 }
 #endif

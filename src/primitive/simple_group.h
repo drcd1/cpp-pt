@@ -11,8 +11,10 @@ namespace cpppt{
 class SimpleGroup: public Primitive {
 private:
     std::vector<std::shared_ptr<Primitive>> primitives;
+    AABB aabb;
 
 public:    
+
     void add(std::shared_ptr<Primitive> primitive){
         primitives.push_back(primitive);
     }
@@ -35,7 +37,13 @@ public:
         }
         return false;
     }
+
+    AABB get_bounds() const {
+        return aabb;
+    }
 };
+
+
 }
 
 #endif

@@ -23,7 +23,10 @@ public:
                 Ray ray = sc.camera->get_ray(coords);
                 Intersection intersection;
                 bool intersected = sc.primitive->intersect(ray,&intersection);
-                //std::cout<<intersected<<std::endl;
+                
+                #ifdef RAY_STATISTICS
+                std::cout<<ray.tests<<std::endl;
+                #endif
                 if(!intersected){
                     image->put_pixel(i,j,Vec3(coords.x,coords.y,0.0));
                 } else {
