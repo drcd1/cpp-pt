@@ -4,6 +4,8 @@
 #include <camera/camera.h>
 #include <math/math.h>
 #include <iostream>
+#include <algorithm>
+
 
 namespace cpppt{
 class CameraPerspective: public Camera {
@@ -30,13 +32,36 @@ public:
         direction.z = -1.0;
         direction.y = xy.y*tan_fovy;
         direction.x = xy.x*tan_fovy*aspect_ratio;
-    
+
         direction = normalized(coords*direction);
 
         return Ray(origin, direction);
     };
     RgbImage& get_image()  {
         return image;
+    }
+
+
+    CameraConnection connect_light_path(Sampler& s, const Intersection& it) const {
+        CameraConnection cc;
+        cc.pos = origin;
+
+        Vec3 dir = coords.transpose()*(it.hitpoint-cc.pos);
+        dir = dir/dir.z * -1.0;
+        dir.x =dir.x/(tan_fovy*aspect_ratio);
+        dir.y = dir.y/tan_fovy;
+        cc.i = int((dir.x*0.5 + 0.5)*image.res.x);
+        cc.j = int((dir.y*0.5 + 0.5)*image.res.y);
+
+        cc.j =  image.res.y - cc.j -1;
+        if(cc.i>=image.res.x || cc.j >= image.res.y || cc.j<0 || cc.i<0){
+            cc.i = -1;
+            cc.j = -1;
+        }
+
+        return cc;
+
+
     }
 };
 }

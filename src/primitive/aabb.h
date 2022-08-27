@@ -11,15 +11,15 @@ namespace cpppt{
         public:
         Vec3 min;
         Vec3 max;
-        AABB(): 
+        AABB():
             min(std::numeric_limits<float>::infinity()),
             max(-std::numeric_limits<float>::infinity())
         {}
         AABB(const Vec3& min,const Vec3& max):min(min),max(max){}
-        bool intersectAny(const Ray& r) const{
+        bool intersect_any(const Ray& r) const{
             Vec3 nMin = min;
             Vec3 nMax = max;
-            
+
 
             Vec3 dmin = nMin - r.o;
             Vec3 dmax = nMax - r.o;
@@ -41,7 +41,7 @@ namespace cpppt{
                 tmin = nMin.y;
             if(tmin<nMin.z && nMin.z>nMin.y)
                 tmin = nMin.z;
-            
+
             float tmax = nMax.x;
             if(tmax>nMax.y)
                 tmax = nMax.y;
@@ -68,15 +68,15 @@ namespace cpppt{
             max = maxF(max,other.max);
         }
 
-        
+
         void unite(const Vec3& other) {
             min = minF(min,other);
             max = maxF(max,other);
         }
 
         float area() const {
-            return 2.0*( fabs(max.x-min.x)*(max.y-min.y) +  
-            fabs(max.z-min.z)*(max.y-min.y) 
+            return 2.0*( fabs(max.x-min.x)*(max.y-min.y) +
+            fabs(max.z-min.z)*(max.y-min.y)
             + fabs(max.x-min.x)*(max.z-min.z)
             );
         }

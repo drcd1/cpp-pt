@@ -26,10 +26,13 @@ public:
     void put_pixel(int i, int j, Vec3 pixel){
         pixels.at(i+j*res.x) = pixel;
     }
+    Vec3* get_pixel(int i, int j){
+        return &(  pixels.data()[i+j*res.x]);
+    }
     void save(std::string filename){
-        
+
         std::vector<char> data(res.x*res.y*3);
-        
+
         for(int i = 0; i<pixels.size(); i++){
             data.at(i*3) = float2char(pixels.at(i).x);
             data.at(i*3+1) = float2char(pixels.at(i).y);
@@ -38,10 +41,10 @@ public:
 
         stbi_write_png(filename.c_str(), res.x,res.y,3, (void*)data.data(),res.x*3);
     }
-    
-    Vec2i res; 
+
+    Vec2i res;
 private:
-    std::vector<Vec3> pixels;   
+    std::vector<Vec3> pixels;
 };
 }
 #endif

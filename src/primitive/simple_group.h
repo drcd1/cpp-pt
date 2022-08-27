@@ -13,7 +13,7 @@ private:
     std::vector<std::shared_ptr<Primitive>> primitives;
     AABB aabb;
 
-public:    
+public:
 
     void add(std::shared_ptr<Primitive> primitive){
         primitives.push_back(primitive);
@@ -27,10 +27,10 @@ public:
         }
         return intersected;
     }
-    bool intersectAny(Ray& r) const {
+    bool intersect_any(Ray& r) const {
         bool intersected = false;
         for(int i = 0; i<primitives.size(); i++){
-            intersected = primitives.at(i)->intersectAny(r);
+            intersected = primitives.at(i)->intersect_any(r);
             if(intersected){
                 return intersected;
             }

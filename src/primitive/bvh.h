@@ -16,31 +16,31 @@ struct BVHNode: public Primitive{
     AABB aabb;
 
     BVHNode(std::unique_ptr<Primitive>& right, std::unique_ptr<Primitive>& left, AABB& aabb): right(std::move(right)),left(std::move(left)),aabb(aabb){
-        
+
     }
 
     virtual bool intersect(Ray& r, Intersection* is) const {
-        if(!aabb.intersectAny(r))
+        if(!aabb.intersect_any(r))
             return false;
-            
+
         #ifdef RAY_STATISTICS
         r.tests+=1;
         #endif
 
         bool intersected = false;
-        
+
         //i hope the compiler doesn't optimize this
         bool tmp = right->intersect(r,is);
         intersected = left->intersect(r,is);
 
-        
-        
+
+
         return tmp | intersected;
     }
-    virtual bool intersectAny(Ray& r) const {
-        if(!aabb.intersectAny(r))
+    virtual bool intersect_any(Ray& r) const {
+        if(!aabb.intersect_any(r))
             return false;
-        return right->intersectAny(r) || left->intersectAny(r);
+        return right->intersect_any(r) || left->intersect_any(r);
     }
     virtual AABB get_bounds() const {
         return aabb;
@@ -57,26 +57,26 @@ private:
 
     //template <int axis>
     std::pair<std::vector<int>,std::vector<int>> compute_split(int axis,const std::vector<int>& toSplit, float& cost, const AABB& bounds){
-             
+
         std::vector<std::vector<int>> partitions(n_partitions);
 
         for(int i: toSplit){
             bool assigned = false;
             for(int j = 0; j<n_partitions-1; j++){
                 if(axis==0){
-                if(primitives.at(i)->get_bounds().center().x <  
+                if(primitives.at(i)->get_bounds().center().x <
                 bounds.min.x + (bounds.max.x-bounds.min.x)*float(j+1)/float(n_partitions)){
                     partitions.at(j).push_back(i);
                     assigned = true;
                 }
                 } else if(axis ==1) {
-                if(primitives.at(i)->get_bounds().center().y <  
+                if(primitives.at(i)->get_bounds().center().y <
                 bounds.min.y + (bounds.max.y-bounds.min.y)*float(j+1)/float(n_partitions)){
                     partitions.at(j).push_back(i);
                     assigned = true;
-                } 
+                }
                 } else {
-                if(primitives.at(i)->get_bounds().center().z <  
+                if(primitives.at(i)->get_bounds().center().z <
                 bounds.min.z + (bounds.max.z-bounds.min.z)*float(j+1)/float(n_partitions)){
                     partitions.at(j).push_back(i);
                     assigned = true;
@@ -117,12 +117,12 @@ private:
                         right.unite(primitives.at(partitions.at(j).at(k))->get_bounds());
                     }
                 }
-                
+
             }
-            
-            partition_cost.at(i) =  ((lc==0 || rc== 0)? 
-            std::numeric_limits<float>::infinity() :left.area() 
-            + right.area()); 
+
+            partition_cost.at(i) =  ((lc==0 || rc== 0)?
+            std::numeric_limits<float>::infinity() :left.area()
+            + right.area());
         }
 
         int min = 0;
@@ -147,7 +147,7 @@ private:
 
 
         return ret;
-        
+
     }
 
     std::unique_ptr<Primitive> build_node(std::vector<int>& prims){
@@ -161,7 +161,7 @@ private:
 
         AABB bounds;
         AABB bounds_centroid;
-        
+
         //TODO: compute bounds faster
         for(int i = 0; i<prims.size(); i++){
             AABB tmp = primitives.at(prims.at(i))->get_bounds();
@@ -198,12 +198,12 @@ private:
             right = p3.second;
         }
 
-        
+
 
         return std::make_unique<BVHNode>(build_node(left),build_node(right),bounds);
     }
 
-public:    
+public:
     void add(std::shared_ptr<Primitive> primitive){
         primitives.push_back(primitive);
     }
@@ -221,8 +221,8 @@ public:
     bool intersect(Ray& r, Intersection* is) const {
         return root->intersect(r,is);
     }
-    bool intersectAny(Ray& r) const {
-        return root->intersectAny(r);
+    bool intersect_any(Ray& r) const {
+        return root->intersect_any(r);
     }
 
     AABB get_bounds() const {

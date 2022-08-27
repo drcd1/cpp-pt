@@ -10,7 +10,7 @@ namespace cpppt{
 class Primitive {
 public:
     virtual bool intersect(Ray& r, Intersection* is) const  = 0;
-    virtual bool intersectAny(Ray& r) const  = 0;
+    virtual bool intersect_any(Ray& r) const  = 0;
     virtual AABB get_bounds() const = 0;
 };
 

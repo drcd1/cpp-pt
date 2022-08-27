@@ -15,7 +15,7 @@ private:
     std::shared_ptr<BxDF> bxdf;
     AABB aabb;
 public:
-    PrimitiveLeaf(std::shared_ptr<Shape> shape, std::shared_ptr<BxDF> bxdf): 
+    PrimitiveLeaf(std::shared_ptr<Shape> shape, std::shared_ptr<BxDF> bxdf):
     shape(shape), bxdf(bxdf),
     aabb(shape->get_bounds()){}
     bool intersect(Ray& r, Intersection* is) const {
@@ -25,11 +25,19 @@ public:
         }
         return intersected;
     }
-    bool intersectAny(Ray& r) const {
-        return shape->intersectAny(r);
+    bool intersect_any(Ray& r) const {
+        return shape->intersect_any(r);
     }
     AABB get_bounds() const {
         return aabb;
+    }
+
+    const std::shared_ptr<Shape> get_shape() const {
+        return shape;
+    }
+
+    const std::shared_ptr<BxDF> get_bxdf() const {
+        return bxdf;
     }
 };
 

@@ -63,13 +63,13 @@ T lensqr(const Vector4<T>& a){
 }
 
 template <typename T>
-T len(const Vector4<T>& a){
+T length(const Vector4<T>& a){
     return sqrt(lensqr(a));
 }
 
 template <typename T>
 Vector4<T> normalized(const Vector4<T>& a){
-    return a/len(a);
+    return a/length(a);
 }
 
 
@@ -122,7 +122,7 @@ T lensqr(const Vector3<T>& a){
 }
 
 template <typename T>
-T len(const Vector3<T>& a){
+T length(const Vector3<T>& a){
     return sqrt(lensqr(a));
 }
 
@@ -136,7 +136,7 @@ Vector3<T> cross(const Vector3<T>& a, const Vector3<T>& b){
 
 template <typename T>
 Vector3<T> normalized(const Vector3<T>& a){
-    return a/len(a);
+    return a/length(a);
 }
 
 
@@ -189,7 +189,7 @@ T lensqr(const Vector2<T>& a){
 }
 
 template <typename T>
-T len(const Vector2<T>& a){
+T length(const Vector2<T>& a){
     return sqrt(lensqr(a));
 }
 
@@ -206,7 +206,7 @@ Vector3<T> maxF(const Vector3<T>& a, const Vector3<T>& b){
 
 template <typename T>
 Vector2<T> normalized(const Vector2<T>& a){
-    return a/len(a);
+    return a/length(a);
 }
 typedef Vector4<float> Vec4;
 typedef Vector4<int> Vec4i;
@@ -283,7 +283,7 @@ struct Mat3{
             values[5]+a.values[5],
             values[6]+a.values[6],
             values[7]+a.values[7],
-            values[8]+a.values[8]        
+            values[8]+a.values[8]
         };
     }
 
@@ -297,7 +297,7 @@ struct Mat3{
             values[5]-a.values[5],
             values[6]-a.values[6],
             values[7]-a.values[7],
-            values[8]-a.values[8]        
+            values[8]-a.values[8]
         };
     }
     Mat3 operator*(const Mat3& a) const {
@@ -305,11 +305,11 @@ struct Mat3{
                 values[0]*a.values[0]+values[1]*a.values[3]+values[2]*a.values[6],
                 values[0]*a.values[1]+values[1]*a.values[4]+values[2]*a.values[7],
                 values[0]*a.values[2]+values[1]*a.values[5]+values[2]*a.values[8],
-                
+
                 values[3]*a.values[0]+values[4]*a.values[3]+values[5]*a.values[6],
                 values[3]*a.values[1]+values[4]*a.values[4]+values[5]*a.values[7],
                 values[3]*a.values[2]+values[4]*a.values[5]+values[5]*a.values[8],
-                
+
                 values[6]*a.values[0]+values[7]*a.values[3]+values[8]*a.values[6],
                 values[6]*a.values[1]+values[7]*a.values[4]+values[8]*a.values[7],
                 values[6]*a.values[2]+values[7]*a.values[5]+values[8]*a.values[8]
@@ -356,7 +356,7 @@ struct Mat3{
 
         float det = a*e*i+d*h*c+b*f*g - c*e*g-d*b*i-a*f*h;
 
-        
+
         return Mat3(
                 (e*i-f*h), -(b*i-c*h),  (b*f-c*e),
                -(d*i-f*g),  (a*i-c*g), -(a*f-c*d),
@@ -369,20 +369,20 @@ struct Mat3{
                 values[3],
                 values[6],
 
-                
+
                 values[1],
                 values[4],
                 values[7],
 
-                
+
                 values[2],
                 values[5],
-                values[8],    
+                values[8],
         };
     }
 
 
-};  
+};
 
 
 
@@ -457,8 +457,8 @@ struct Mat4{
         values[12] = x.x; values[13] = x.x; values[14] = x.x; values[15] = x.x;
     }
 
-    Mat4(float a, float b, float c, float d, 
-         float e, float f, float g, float h, 
+    Mat4(float a, float b, float c, float d,
+         float e, float f, float g, float h,
          float i, float j, float k, float l,
          float m, float n, float o, float p){
 
@@ -513,7 +513,7 @@ struct Mat4{
             values[12] + a.values[12],
             values[13] + a.values[13],
             values[14] + a.values[14],
-            values[15] + a.values[15],     
+            values[15] + a.values[15],
         };
     }
 
@@ -534,7 +534,7 @@ struct Mat4{
             values[12] - a.values[12],
             values[13] - a.values[13],
             values[14] - a.values[14],
-            values[15] - a.values[15],          
+            values[15] - a.values[15],
         };
     }
     Mat4 operator*(const Mat4& a) const {
@@ -543,17 +543,17 @@ struct Mat4{
                 values[0]  * a.values[1] + values[1] * a.values[5] + values[2] * a.values[9]+values[3]*a.values[13],
                 values[0]  * a.values[2] + values[1] * a.values[6] + values[2] * a.values[10]+values[3]*a.values[14],
                 values[0]  * a.values[3] + values[1] * a.values[7] + values[2] * a.values[11]+values[3]*a.values[15],
-                    
+
                 values[4]  * a.values[0] + values[5] * a.values[4] + values[6] * a.values[8]+values[3]*a.values[12],
                 values[4]  * a.values[1] + values[5] * a.values[5] + values[6] * a.values[9]+values[3]*a.values[13],
                 values[4]  * a.values[2] + values[5] * a.values[6] + values[6] * a.values[10]+values[3]*a.values[14],
                 values[4]  * a.values[3] + values[5] * a.values[7] + values[6] * a.values[11]+values[3]*a.values[15],
-                    
+
                 values[8]  * a.values[0] + values[9] * a.values[4] + values[10] * a.values[8]+values[3]*a.values[12],
                 values[8]  * a.values[1] + values[9] * a.values[5] + values[10] * a.values[9]+values[3]*a.values[13],
                 values[8]  * a.values[2] + values[9] * a.values[6] + values[10] * a.values[10]+values[3]*a.values[14],
                 values[8]  * a.values[3] + values[9] * a.values[7] + values[10] * a.values[11]+values[3]*a.values[15],
-                 
+
                 values[12] * a.values[0] + values[13] * a.values[4] + values[14] * a.values[8]+values[15]*a.values[12],
                 values[12] * a.values[1] + values[13] * a.values[5] + values[14] * a.values[9]+values[15]*a.values[13],
                 values[12] * a.values[2] + values[13] * a.values[6] + values[14] * a.values[10]+values[15]*a.values[14],
@@ -626,7 +626,7 @@ struct Mat4{
     }
 
 
-};  
+};
 
 
 
@@ -646,15 +646,21 @@ bool solve_quadratic(float a, float b, float c, float* t1, float* t2){
 
 Vec3 sample_hemisphere_cos(float r1, float r2){
     float theta = r1*2.0*M_PI;
-    float sin_phi =sqrt(r2);
+    float sin_phi = sqrt(r2);
     float cos_phi = sqrt((1.0-sin_phi*sin_phi));
 
     return Vec3(cos(theta)*sin_phi,sin(theta)*sin_phi,cos_phi);
 }
 
+Vec3 sample_sphere(float r1, float r2){
+    float theta = 2.0*M_PI*r1;
+    float phi = acos(1.0- 2.0*M_PI*r2);
+    return {sin(phi)*cos(theta), sin(phi)*sin(theta), cos(phi)};
+
+}
 
 //gets an orthogonal system -- function inpired PBRT
-void orthogonal(Vec3& v1, Vec3* x, Vec3* y, Vec3* z) {
+void orthogonal(const Vec3& v1, Vec3* x, Vec3* y, Vec3* z) {
     float abs_x = fabs(v1.x);
     float abs_y = fabs(v1.y);
     float abs_z = fabs(v1.z);

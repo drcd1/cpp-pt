@@ -21,31 +21,36 @@ class Pathtracer : public Renderer{
 
     static float russian_roulette(const Vec3& col){
         //Todo: better rr
-        return (col.x*0.2 + col.y*0.5 +col.z*0.3)*0.5 + 0.4;
+        return (fabs(col.x*0.2 + col.y*0.5 +col.z*0.3))*0.5 + 0.4;
     }
 
 
-
-    Vec3 integrate(const Scene& scene, const Vec2& coords, Sampler& sampler) const {
+    Vec3 integrate_pt(const Scene& scene, const Vec2& coords, Sampler& sampler) const {
         Ray ray = scene.camera->get_ray(coords);
         Intersection intersection;
+        Intersection prev_intersection;
         Vec3 col(0.0);
         Vec3 mul(1.0);
-        for(int i = 0; i<32; i++){            
+        for(int i = 0; i<32; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
             if(!intersected){
-                col = col + mul*render_sky(ray);
+                //col = col + mul*render_sky(ray);
                 break;
             } else {
-                col =  col + mul* intersection.material->emit(ray.d*(-1.0),intersection);
+                if(true){
+                    col = col + mul*intersection.material->emit(ray.d*(-1.0),intersection);
+                }
+
                 Vec3 sample_direction;
-                
+
                 float p = intersection.material->sample(sampler, ray.d*(-1.0), intersection, &sample_direction);
+
                 if(p<=0.0){
                     break;
                 }
 
                 Vec3 eval = intersection.material->eval(ray.d*(-1.0), sample_direction, intersection);
+
                 if(i>2){
                     float rr = russian_roulette(eval);
                     if(sampler.sample() > rr) {
@@ -56,6 +61,107 @@ class Pathtracer : public Renderer{
 
                 mul = mul*eval/p;
                 ray = Ray(intersection.hitpoint, sample_direction);
+                prev_intersection = intersection;
+            }
+        }
+        return col;
+    }
+
+    Vec3 integrate(const Scene& scene, const Vec2& coords, Sampler& sampler) const {
+        Ray ray = scene.camera->get_ray(coords);
+        Intersection intersection;
+        Intersection prev_intersection;
+        Vec3 col(0.0);
+        Vec3 mul(1.0);
+        bool sampled_delta = true;
+        for(int i = 0; i<32; i++){
+            bool intersected = scene.primitive->intersect(ray,&intersection);
+            if(!intersected){
+                //col = col + mul*render_sky(ray);
+                break;
+            } else {
+                auto bsdf = intersection.material;
+                if(sampled_delta){
+                    col = col + mul*bsdf->emit(ray.d*(-1.0),intersection);
+                }
+                sampled_delta = false;
+
+
+//               if(bsdf->is_emitter()){
+
+
+                /*don't compute emission*/
+                    //compute MIS weights
+                    //float p_bsdf_nee  = scene.lights.pdf(intersection, prev_intersection)*(r*r)/bsdf_cos;
+                    //float p_bsdf_bsdf = p;
+                    //float w_bsdf = p_bsdf_bsdf/(p_bsdf_nee + p_bsdf_bsdf);
+                    //col =  col + mul* bsdf->emit(ray.d*(-1.0),intersection);
+//                }
+
+
+
+                Vec3 sample_direction;
+                //float w_bsdf;
+
+                float p = bsdf->sample(sampler, ray.d*(-1.0), intersection, &sample_direction);
+                //note: p does not include the cosine term
+
+                //float bsdf_cos = fabs(dot(ray.d,intersection.normal));
+                //float r = (intersection.hitpoint - ray.o).length();
+
+
+                Vec3 eval = bsdf->eval(ray.d*(-1.0), sample_direction, intersection);
+
+
+                /* NEE */
+                if(!bsdf->is_delta()){
+                    LightSample light_sample = scene.light->connect_eye_path(sampler, intersection);
+                    Ray shadow_ray(intersection.hitpoint,
+                        normalized(light_sample.position-intersection.hitpoint),
+                            length(light_sample.position-intersection.hitpoint));
+
+                    if(dot(shadow_ray.d,intersection.normal)>0.0){
+                    if(!scene.primitive->intersect_any(shadow_ray)){
+                        float cosine_term = 1.0;
+                        if(!light_sample.ref->is_delta())
+                            float cosine_term = fabs(dot(light_sample.normal,shadow_ray.d));
+
+                        float r = length(light_sample.position-intersection.hitpoint);
+                        col = col + mul*bsdf->eval(
+                            ray.d*(-1.0),
+                            shadow_ray.d,
+                            intersection
+                        )*light_sample.intensity*cosine_term/(light_sample.pdf*r*r);
+                        //TODO: what is 2.0?
+                    }
+                    }
+                } else {
+                    sampled_delta = true;
+                }
+                /* MIS */
+
+                //float p_nee_bsdf = bsdf->pdf(intersection, light_sample);
+                //float p_nee_nee = light_sample.p*r*r/some_cosine;
+
+                //float w_bsdf = p_nee_nee/(p_nee_bsdf + p_nee_nee);
+
+
+
+
+                if(i>2){
+                    float rr = russian_roulette(eval);
+                    if(sampler.sample() > rr) {
+                        break;
+                    }
+                    p = p*rr;
+                }
+
+                mul = mul*eval/p;
+                //if(!sampled_delta)
+                    ray = Ray(intersection.hitpoint+sample_direction*EPS, sample_direction);
+                //else
+                  //  ray = Ray(intersection.hitpoint+ray.d*EPS, ray.d);
+                prev_intersection = intersection;
             }
         }
         return col;
@@ -67,10 +173,10 @@ public:
     void render(Scene& sc, std::string filename) const {
         RgbImage* image= &(sc.camera->get_image());
         Vec2i res = image->res;
-        
+
         #pragma omp parallel for
         for(int i = 0; i<res.x; i++){
-            
+
 
             RandomSampler s(i);
             if(i%50==0)
@@ -81,10 +187,10 @@ public:
                     for(int l = 0; l<samples; l++){
                         float r1 = s.sample();
                         float r2 = s.sample();
-                        
+
                         Vector2<float> coords( ((float(i)+float(k+r1)/samples)/float(res.x))*2.0-1.0, -(((float(j)+float(l+r2)/samples)/float(res.y))*2.0-1.0));
                         acc = acc +integrate(sc, coords, s);
-                        
+
                     }
                 }
 
@@ -94,7 +200,7 @@ public:
 
             }
         }
-        
+
 
         image->save(filename);
     }
