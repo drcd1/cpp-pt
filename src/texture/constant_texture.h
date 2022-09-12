@@ -6,14 +6,14 @@ namespace cpppt{
 
 
 template <typename T>
-class ConstantTexture: public Texture<T> {
+class ConstantTexture: public Texture {
     T constant;
 public:
     ConstantTexture(const T& ct): constant(ct) {}
 
 
-    T sample(const Vec3& uv) const {
-        return constant;
+    Vec3 sample(const Vec3& uv) const {
+        return Vec3(constant);
     }
 };
 

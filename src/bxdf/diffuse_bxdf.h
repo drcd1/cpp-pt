@@ -12,14 +12,13 @@ namespace cpppt{
 
 class DiffuseBxDF: public BxDF{
     private:
-
-        std::shared_ptr<Texture<Vec3>> tex;
+        Vec3 col;
     public:
 
-        DiffuseBxDF(std::shared_ptr<Texture<Vec3>> tex):tex(tex){}
+        DiffuseBxDF(Vec3 col):col(col){}
 
-        Vec3 eval(const Vec3& wo, const Vec3& wi,const Intersection& it) {
-            return tex->sample(it.texture_coords)*(dot(it.normal, wi))/M_PI;
+        Vec3 eval(const Vec3& wo, const Vec3& wi, const Intersection& it) {
+            return col*(dot(it.normal, wi))/M_PI;
         }
         float sample(Sampler& sampler, const Vec3& wo, const Intersection& it, Vec3* sample_direction) {
             float r1 = sampler.sample();
