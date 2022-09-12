@@ -5,33 +5,26 @@
 #include <primitive/primitive.h>
 #include <primitive/bvh.h>
 #include <light/light.h>
+#include <light/light_group.h>
 #include <shape/mesh.h>
-#include <bxdf/bxdf.h>
+#include <bxdf/standard_material.h>
 #include <texture/texture.h>
 #include <fstream>
 #include<sstream>
 namespace cpppt{
-class Scene {
-private:
+
+struct SceneData{
     std::vector<std::shared_ptr<Mesh>> meshes;
-    std::vector<std::shared_ptr<BxDF>> materials;
+    std::vector<std::shared_ptr<Material>> materials;
+};
+
+class Scene {
 
 public:
     std::shared_ptr<Camera> camera;
     std::shared_ptr<BVH> primitive;
     std::shared_ptr<LightGroup> light;
     /*
-    static std::shared_ptr<Texture> get_texture(std::string directory, std::string albedo_map){
-        if(albedo_map._Starts_with("rgb")){
-            float r,g,b;
-            std::stringstream ss(albedo_map);
-            ss>>r>>g>>b;
-            return make_shared<ConstantTexture<Vec3>>(Vec3(r,g,b));
-        } else if(albedo_map._Starts_with("float")){
-            float r,g,b;
-            std::stringstream ss(albedo_map);
-        }
-    }
 
     static int process_material(Scene* s, std::string directory, std::string filename){
 

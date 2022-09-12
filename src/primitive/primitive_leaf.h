@@ -6,22 +6,23 @@
 #include <primitive/aabb.h>
 #include <shape/shape.h>
 #include <memory.h>
+#include <bxdf/standard_material.h>
 namespace cpppt{
 
 
 class PrimitiveLeaf: public Primitive {
 private:
     std::shared_ptr<Shape> shape;
-    std::shared_ptr<BxDF> bxdf;
+    std::shared_ptr<Material> material;
     AABB aabb;
 public:
-    PrimitiveLeaf(std::shared_ptr<Shape> shape, std::shared_ptr<BxDF> bxdf):
-    shape(shape), bxdf(bxdf),
+    PrimitiveLeaf(std::shared_ptr<Shape> shape, std::shared_ptr<Material> material):
+    shape(shape), material(material),
     aabb(shape->get_bounds()){}
     bool intersect(Ray& r, Intersection* is) const {
         bool intersected = shape->intersect(r,is);
         if(intersected){
-            is->material = bxdf;
+            is->material = material;
         }
         return intersected;
     }
@@ -36,8 +37,8 @@ public:
         return shape;
     }
 
-    const std::shared_ptr<BxDF> get_bxdf() const {
-        return bxdf;
+    const std::shared_ptr<Material> get_material() const {
+        return material;
     }
 };
 

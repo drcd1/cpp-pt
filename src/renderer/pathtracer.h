@@ -16,7 +16,7 @@ class Pathtracer : public Renderer{
     int samples;
 
     Vec3 render_sky(const Ray& r) const {
-        return Vec3(0.0);
+        return Vec3(.0);
     }
 
     static float russian_roulette(const Vec3& col){
@@ -24,7 +24,7 @@ class Pathtracer : public Renderer{
         return (fabs(col.x*0.2 + col.y*0.5 +col.z*0.3))*0.5 + 0.4;
     }
 
-
+/*
     Vec3 integrate_pt(const Scene& scene, const Vec2& coords, Sampler& sampler) const {
         Ray ray = scene.camera->get_ray(coords);
         Intersection intersection;
@@ -66,7 +66,7 @@ class Pathtracer : public Renderer{
         }
         return col;
     }
-
+    */
     Vec3 integrate(const Scene& scene, const Vec2& coords, Sampler& sampler) const {
         Ray ray = scene.camera->get_ray(coords);
         Intersection intersection;
@@ -77,12 +77,15 @@ class Pathtracer : public Renderer{
         for(int i = 0; i<32; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
             if(!intersected){
-                //col = col + mul*render_sky(ray);
+                col = col + mul*render_sky(ray);
                 break;
             } else {
-                auto bsdf = intersection.material;
-                if(sampled_delta){
-                    col = col + mul*bsdf->emit(ray.d*(-1.0),intersection);
+                auto bsdf = intersection.material->get_bxdf(intersection.texture_coords);
+                if(bsdf->is_emitter()){
+                    if(sampled_delta){
+                        col = col + mul*bsdf->emit(ray.d*(-1.0),intersection);
+                    }
+                    break;
                 }
                 sampled_delta = false;
 
@@ -116,23 +119,26 @@ class Pathtracer : public Renderer{
                 /* NEE */
                 if(!bsdf->is_delta()){
                     LightSample light_sample = scene.light->connect_eye_path(sampler, intersection);
-                    Ray shadow_ray(intersection.hitpoint,
-                        normalized(light_sample.position-intersection.hitpoint),
-                            length(light_sample.position-intersection.hitpoint));
+                    Vec3 s_dir = (light_sample.position-intersection.hitpoint);
+                    float len = length(s_dir);
+                    s_dir = s_dir/len;
+
+                    Ray shadow_ray(intersection.hitpoint + s_dir*EPS,
+                            s_dir,
+                            len-2.0*EPS);
 
                     if(dot(shadow_ray.d,intersection.normal)>0.0){
                     if(!scene.primitive->intersect_any(shadow_ray)){
-                        float cosine_term = 1.0;
-                        if(!light_sample.ref->is_delta())
-                            float cosine_term = fabs(dot(light_sample.normal,shadow_ray.d));
-
-                        float r = length(light_sample.position-intersection.hitpoint);
+                        //float cosine_term = 1.0;
+                        //if(!light_sample.ref->is_delta())
+                        //    float cosine_term = fabs(dot(light_sample.normal,shadow_ray.d));
+                       /*TODO:why doesn't the cosine term here work?*/
+                        float r = len;
                         col = col + mul*bsdf->eval(
                             ray.d*(-1.0),
                             shadow_ray.d,
                             intersection
-                        )*light_sample.intensity*cosine_term/(light_sample.pdf*r*r);
-                        //TODO: what is 2.0?
+                        )*light_sample.intensity/(light_sample.pdf*r*r);
                     }
                     }
                 } else {
@@ -168,7 +174,7 @@ class Pathtracer : public Renderer{
     }
 
 public:
-    Pathtracer(int samples): samples(samples) {}
+    Pathtracer(const RenderSettings& rs): samples(rs.spp) {}
 
     void render(Scene& sc, std::string filename) const {
         RgbImage* image= &(sc.camera->get_image());
@@ -195,7 +201,6 @@ public:
                 }
 
                 acc = acc/(float(samples*samples));
-                acc = Vec3(linear2srgb(acc.x),linear2srgb(acc.y),linear2srgb(acc.z));
                 image->put_pixel(i,j,acc);
 
             }

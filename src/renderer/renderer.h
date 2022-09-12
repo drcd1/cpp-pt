@@ -5,8 +5,20 @@
 #include <camera/camera.h>
 #include <string>
 #include <scene.h>
+
 namespace cpppt{
+
+struct RenderSettings{
+    enum RendererType {PATHTRACER, LIGHTTRACER, DEBUG};
+
+    RendererType renderer = RendererType::DEBUG;
+    int spp = 1;
+    int resX = 256;
+    int resY = 256;
+};
+
 class Renderer{
+public:
     virtual void render(Scene& sc, std::string filename) const = 0;
 };
 }

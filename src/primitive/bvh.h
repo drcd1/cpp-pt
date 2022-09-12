@@ -199,7 +199,7 @@ private:
         }
 
 
-
+        /*TODO: deal with edge case of polys in same place*/
         return std::make_unique<BVHNode>(build_node(left),build_node(right),bounds);
     }
 

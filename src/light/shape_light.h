@@ -18,9 +18,11 @@ public:
         it = primitive->get_shape()->sample(s);
 
         ls.position = it.hitpoint;
-        ls.intensity = primitive->get_bxdf()->emit(
+        ls.intensity = primitive->get_material()->get_bxdf(it.texture_coords)->emit(
             normalized(from.hitpoint - ls.position),
-            it);
+            it)*fabs(dot(it.normal, normalized(from.hitpoint - ls.position)));
+
+        //ls.intensity = fabs(dot(it.normal, normalized(from.hitpoint - ls.position)))*8.0;
 
         //TODO: change this to come from sample
         //so far, all samples are equiprobable
@@ -44,11 +46,12 @@ public:
         it = primitive->get_shape()->sample(s);
 
         Vec3 sample_direction;
-        float p = primitive->get_bxdf()->emit_sample(s, it, &sample_direction);
+        auto bxdf = primitive->get_material()->get_bxdf(it.texture_coords);
+        float p = bxdf->emit_sample(s, it, &sample_direction);
         LightPathStart lps;
         lps.direction = sample_direction;
         lps.position = it.hitpoint;
-        lps.radiance =  primitive->get_bxdf()->emit(
+        lps.radiance =  bxdf->emit(
             normalized(lps.direction),
             it);
 

@@ -41,7 +41,7 @@ class Lighttracer : public Renderer{
 
                 break;
             } else {
-                auto bsdf = intersection.material;
+                auto bsdf = intersection.material->get_bxdf(intersection.texture_coords);
 
                 Vec3 sample_direction;
 
@@ -108,7 +108,7 @@ class Lighttracer : public Renderer{
     }
 
 public:
-    Lighttracer(int samples): samples(samples) {}
+    Lighttracer(const RenderSettings& rs): samples(rs.spp) {}
 
     void render(Scene& sc, std::string filename) const {
         RgbImage* image= &(sc.camera->get_image());
@@ -132,6 +132,8 @@ public:
             }
         }
 
+        /*
+
         #pragma omp parallel for
         for(int i = 0; i<res.x; i++){
             for(int j = 0; j<res.y; j++){
@@ -140,7 +142,7 @@ public:
                 image->put_pixel(i,j,h);
             }
         }
-
+        */
 
 
         image->save(filename);

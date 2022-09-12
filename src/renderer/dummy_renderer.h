@@ -23,7 +23,7 @@ public:
                 Ray ray = sc.camera->get_ray(coords);
                 Intersection intersection;
                 bool intersected = sc.primitive->intersect(ray,&intersection);
-                
+
                 #ifdef RAY_STATISTICS
                 std::cout<<ray.tests<<std::endl;
                 #endif
@@ -32,8 +32,7 @@ public:
                 } else {
                     //float val = abs(dot(intersection.normal,ray.d));
                     //image->put_pixel(i,j,Vec3(val,val,val));
-
-                    image->put_pixel(i,j, intersection.material->eval(ray.d*(-1.0),ray.d*(-1.0),intersection));
+                    image->put_pixel(i,j, intersection.material->get_bxdf(intersection.texture_coords)->eval(ray.d*(-1.0),ray.d*(-1.0),intersection));
                 }
 
                 //std::cout<<coords.x<<" "<<coords.y<<std::endl;

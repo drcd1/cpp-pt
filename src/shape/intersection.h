@@ -2,11 +2,9 @@
 #define CPPPT_INTERSECTION
 
 #include <math/math.h>
-#include <bxdf/bxdf.h>
+#include <bxdf/material.h>
 
 namespace cpppt{
-
-
 
 struct Intersection{
     Vec3 texture_coords;
@@ -14,7 +12,7 @@ struct Intersection{
     Vec3 tangent;
     Vec3 normal;
     Vec3 hitpoint;
-    std::shared_ptr<BxDF> material;
+    std::shared_ptr<Material> material;
 };
 
 

@@ -91,7 +91,7 @@ namespace cpppt {
                 Vec2 uv1 = mesh->get_uv(tri[0]);
                 Vec2 uv2 = mesh->get_uv(tri[1]);
                 Vec2 uv3 = mesh->get_uv(tri[2]);
-                uv = uv1*alpha + uv2*beta + uv2*gamma;
+                uv = uv1*alpha + uv2*beta + uv3*gamma;
             }
 
             Vec3 bitangent(1.0,0.0,0.0);
@@ -265,7 +265,7 @@ namespace cpppt {
             it.normal = normal;
             it.bitangent = bitangent;
             it.tangent = normalized(cross(bitangent,normal));
-            it.hitpoint = pos + normal*EPS;
+            it.hitpoint = pos;
             it.texture_coords = Vec3(uv.x,uv.y,0.0);
             return it;
         }

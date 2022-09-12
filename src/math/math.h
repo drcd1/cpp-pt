@@ -687,13 +687,6 @@ void orthogonal(const Vec3& v1, Vec3* x, Vec3* y, Vec3* z) {
     return;
 }
 
-float linear2srgb(float a){
-    if(a>0.0031308){
-        return (1.0+0.055)*powf(a,1.0/2.4)-0.055;
-    } else {
-        return 12.92*a;
-    }
-}
 
 void print(const Mat3& m) {
     std::cout<<m.values[0]<<" "<<m.values[1]<<" "<<m.values[2]<<std::endl;

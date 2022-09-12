@@ -16,7 +16,7 @@ class Mesh{
         //when baking normal maps.
         std::vector<Vec3> bitangents;
 
-        
+
 
         std::vector<std::array<int,3>> triangles;
 
@@ -43,7 +43,7 @@ class Mesh{
             if(uvs.size() < 1){
                 return;
             }
-            
+
             for(auto t: triangles){
                 Vec3 a = vertices.at(t.at(1))-vertices.at(t.at(0));
                 Vec3 b = vertices.at(t.at(2))-vertices.at(t.at(0));
@@ -64,13 +64,13 @@ class Mesh{
             for(auto& t: bitangents){
                 t = normalized(t);
             }
-            
-            
+
+
 
         }
-        
 
 
+        /*
         static std::vector<Mesh> read_sob(std::string filename){
             //nv nf
             //v
@@ -79,20 +79,34 @@ class Mesh{
             //tg
             //uv
         }
+        */
 
 
     public:
-    
+
         Mesh(
-            std::vector<std::array<int,3>>&& triangles, 
+            std::vector<std::array<int,3>>&& triangles,
             std::vector<Vec3>&& vertices,
-            std::vector<Vec2>&& uvs = std::vector<Vec2>()            
+            std::vector<Vec2>&& uvs = std::vector<Vec2>()
         ):triangles(triangles),vertices(vertices),uvs(uvs)
         {
             normals.resize(vertices.size());
             compute_vertex_normals();
             bitangents.resize(vertices.size());
             compute_bitangents();
+        }
+
+        Mesh(int v, int f): triangles(f),vertices(v),normals(v),uvs(v),bitangents(v){}
+
+        void set_vertex_data(int id, Vec3 v, Vec3 n, Vec2 uv, Vec3 bitangent){
+            vertices.at(id) = v;
+            normals.at(id) = n;
+            uvs.at(id) = uv;
+            bitangents.at(id) = bitangent;
+        }
+
+        void set_face_data(int id, int a, int b, int c){
+            triangles.at(id) = {a,b,c};
         }
 
         Vec3 get_vertex(int id) const {
@@ -111,7 +125,7 @@ class Mesh{
             return normals.at(id);
         }
 
-        
+
         bool has_uv() const {
             return uvs.size()>0;
         }
@@ -123,6 +137,7 @@ class Mesh{
         int n_triangles(){
             return triangles.size();
         }
+
 
 
 };
