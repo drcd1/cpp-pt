@@ -695,8 +695,6 @@ void print(const Mat3& m) {
 }
 
 
-}
-
 
 void order2(float& min, float& max){
     if(max>=min)
@@ -707,4 +705,41 @@ void order2(float& min, float& max){
 }
 
 
+int compute_sign(const float& f){
+    return  (f>0.0) - (f<0.0);
+}
+
+inline float cosTheta(const Vec3& w){
+    return w.z;
+}
+
+inline float cos2Theta(const Vec3& w){
+    return w.z*w.z;
+}
+
+inline float sin2Theta(const Vec3& w){
+    return 1.0-cos2Theta(w);
+}
+
+inline float sinTheta(const Vec3& w){
+    return sqrt(1.0-cos2Theta(w));
+}
+
+inline float cosPhi(const Vec3& w){
+    if(sinTheta(w)==0.0) return 1.0;
+    /*Todo: clamp?*/
+    return w.y/sinTheta(w);
+}
+
+inline float sinPhi(const Vec3& w){
+    if(sinTheta(w)==0.0) return 1.0;
+    /*Todo: clamp?*/
+    return w.y/sinTheta(w);
+}
+
+inline Vec3 reflect(const Vec3& wo, const Vec3& wh){
+    return normalized(wo*(-1.0) + wh*dot(wh,wo)*2.0);
+}
+
+}
 #endif

@@ -66,6 +66,7 @@ namespace cpppt{
 
             it->hitpoint = r.o + r.d*t;
             it->normal = normalized(it->hitpoint - origin);
+            it->g_normal = it->normal;
             it->hitpoint = it->hitpoint+ it->normal*EPS;
 
             //Vec3 help = it->hitpoint - origin;
@@ -124,6 +125,7 @@ namespace cpppt{
 
             it.hitpoint = p*radius + origin;
             it.normal = p;
+            it.g_normal = p;
             //TODO: fill other
 
 

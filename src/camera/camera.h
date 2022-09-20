@@ -13,6 +13,7 @@ struct CameraConnection{
     int i;
     int j;
     Vec3 pos;
+    float factor;
 };
 
 class Camera {

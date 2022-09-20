@@ -32,7 +32,7 @@ public:
                 } else {
                     //float val = abs(dot(intersection.normal,ray.d));
                     //image->put_pixel(i,j,Vec3(val,val,val));
-                    image->put_pixel(i,j, intersection.material->get_bxdf(intersection.texture_coords)->eval(ray.d*(-1.0),ray.d*(-1.0),intersection));
+                    image->put_pixel(i,j, intersection.get_bxdf()->eval(ray.d*(-1.0),ray.d*(-1.0),intersection));
                 }
 
                 //std::cout<<coords.x<<" "<<coords.y<<std::endl;

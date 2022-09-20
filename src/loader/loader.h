@@ -274,7 +274,9 @@ namespace Loader{
                     rs->renderer = RenderSettings::RendererType::LIGHTTRACER;
                 } else if(rtype=="pathtracer"){
                     rs->renderer = RenderSettings::RendererType::PATHTRACER;
-                } else {
+                } else if(rtype=="pathtracer_mlt"){
+                    rs->renderer = RenderSettings::RendererType::PATHTRACER_MLT;
+                }else {
                     throw std::runtime_error("Unknown renderer type: " + rtype);
                 }
             } else if (type == "spp") {

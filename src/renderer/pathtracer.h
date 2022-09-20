@@ -80,7 +80,7 @@ class Pathtracer : public Renderer{
                 col = col + mul*render_sky(ray);
                 break;
             } else {
-                auto bsdf = intersection.material->get_bxdf(intersection.texture_coords);
+                auto bsdf = intersection.get_bxdf();
                 if(bsdf->is_emitter()){
                     if(sampled_delta){
                         col = col + mul*bsdf->emit(ray.d*(-1.0),intersection);
@@ -107,13 +107,15 @@ class Pathtracer : public Renderer{
                 //float w_bsdf;
 
                 float p = bsdf->sample(sampler, ray.d*(-1.0), intersection, &sample_direction);
+
+                //if sample is not valid, full absorption
+
                 //note: p does not include the cosine term
 
                 //float bsdf_cos = fabs(dot(ray.d,intersection.normal));
                 //float r = (intersection.hitpoint - ray.o).length();
 
 
-                Vec3 eval = bsdf->eval(ray.d*(-1.0), sample_direction, intersection);
 
 
                 /* NEE */
@@ -127,7 +129,8 @@ class Pathtracer : public Renderer{
                             s_dir,
                             len-2.0*EPS);
 
-                    if(dot(shadow_ray.d,intersection.normal)>0.0){
+
+                    if(bsdf->non_zero(intersection,ray.d*(-1.0),shadow_ray.d)){
                     if(!scene.primitive->intersect_any(shadow_ray)){
                         //float cosine_term = 1.0;
                         //if(!light_sample.ref->is_delta())
@@ -151,7 +154,11 @@ class Pathtracer : public Renderer{
 
                 //float w_bsdf = p_nee_nee/(p_nee_bsdf + p_nee_nee);
 
+                if(!bsdf->non_zero(intersection,ray.d*(-1.0),sample_direction)){
+                    break;
+                }
 
+                Vec3 eval = bsdf->eval(ray.d*(-1.0), sample_direction, intersection);
 
 
                 if(i>2){

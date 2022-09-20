@@ -41,12 +41,13 @@ class Lighttracer : public Renderer{
 
                 break;
             } else {
-                auto bsdf = intersection.material->get_bxdf(intersection.texture_coords);
+                auto bsdf = intersection.get_bxdf();
 
                 Vec3 sample_direction;
 
                 float p = bsdf->sample(sampler, ray.d*(-1.0), intersection, &sample_direction);
-                Vec3 eval = bsdf->eval(ray.d*(-1.0), sample_direction, intersection);
+                Vec3 eval = bsdf->eval(ray.d*(-1.0), sample_direction, intersection)*
+                            fabs(dot(ray.d,intersection.normal)/dot(ray.d,intersection.g_normal));
 
 
                 /* Connect to camera */
@@ -57,15 +58,17 @@ class Lighttracer : public Renderer{
                         normalized(cc.pos-intersection.hitpoint),
                             length(cc.pos-intersection.hitpoint));
 
-                    if(dot(shadow_ray.d,intersection.normal)>0.0 && cc.i >-1){
+                    if(bsdf->non_zero(intersection,ray.d*(-1.0),shadow_ray.d) && cc.i >-1){
                     if(!scene.primitive->intersect_any(shadow_ray)){
                         Vec3 color =  mul*bsdf->eval(
                             ray.d*(-1.0),
                             shadow_ray.d,
                             intersection
-                        ) * factor * 1.0/M_PI;
+                        ) * factor *
+                            fabs(dot(ray.d,intersection.normal)/dot(ray.d,intersection.g_normal));
 
                         //color = color/ dot(shadow_ray.d, intersection.normal);
+                        color = color*cc.factor;
 
                         Vec3* px = image.get_pixel(cc.i,cc.j);
                         //*px = Vec3(1.0,0.0,1.0);

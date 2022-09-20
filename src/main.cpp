@@ -1,10 +1,9 @@
-
-
 #include <camera/camera_perspective.h>
 #include <renderer/dummy_renderer.h>
 #include <renderer/debug_renderer.h>
 #include <renderer/Pathtracer.h>
 #include <renderer/Lighttracer.h>
+#include <renderer/pathtracerMLT.h>
 #include <primitive/simple_group.h>
 #include <primitive/bvh.h>
 #include <shape/mesh.h>
@@ -49,6 +48,8 @@ int main(int argc, char** argv){
         renderer = std::make_unique<Lighttracer>(rs);
     } else if(rs.renderer == RenderSettings::RendererType::DEBUG){
         renderer = std::make_unique<DebugRenderer>();
+    }  else if(rs.renderer == RenderSettings::RendererType::PATHTRACER_MLT){
+        renderer = std::make_unique<PathtracerMLT>(rs);
     }
 
     //DummyRenderer renderer;

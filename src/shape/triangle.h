@@ -105,12 +105,8 @@ namespace cpppt {
 
             r.max_t = t;
 
-            if(dot(normal, r.d) >0.0){
-                normal = -normal;
-            }
-
-
             it->normal = normal;
+            it->g_normal = normalized(cross(b-a,c-a));
             it->bitangent = bitangent;
             it->tangent = normalized(cross(bitangent,normal));
             it->hitpoint = r.o+r.d*t;
@@ -262,8 +258,10 @@ namespace cpppt {
                 bitangent = normalized(t1*alpha+t2*beta+t3*gamma);
             }
 
+            it.g_normal = normalized(cross(b-a,c-a));
             it.normal = normal;
             it.bitangent = bitangent;
+            /*todo: sign*/
             it.tangent = normalized(cross(bitangent,normal));
             it.hitpoint = pos;
             it.texture_coords = Vec3(uv.x,uv.y,0.0);

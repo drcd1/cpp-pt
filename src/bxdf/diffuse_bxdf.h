@@ -18,7 +18,7 @@ class DiffuseBxDF: public BxDF{
         DiffuseBxDF(Vec3 col):col(col){}
 
         Vec3 eval(const Vec3& wo, const Vec3& wi, const Intersection& it) {
-            return col*(dot(it.normal, wi))/M_PI;
+            return col*fabs((dot(it.normal, wi)))/M_PI;
         }
         float sample(Sampler& sampler, const Vec3& wo, const Intersection& it, Vec3* sample_direction) {
             float r1 = sampler.sample();

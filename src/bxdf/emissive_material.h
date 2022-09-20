@@ -25,8 +25,12 @@ class EmissiveMaterial : public Material{
         double_sided(double_sided)
         {}
 
-        std::shared_ptr<BxDF> get_bxdf(Vec3 uv) const {
+        std::shared_ptr<BxDF> get_bxdf(const Vec3& uv) const {
             return std::make_shared<EmissiveBxDF>(albedo->sample(uv)*intensity, double_sided);
+        }
+
+        Vec3 get_normal_mapped(const Vec3& uv, const Vec3& tangent, const Vec3& bitangent, const Vec3& normal) const {
+            return normal;
         }
 
         bool is_emissive() const {

@@ -47,17 +47,22 @@ public:
         cc.pos = origin;
 
         Vec3 dir = coords.transpose()*(it.hitpoint-cc.pos);
+        float n_d_l = length(dir);
+        Vec3 n_dir = dir/n_d_l;
         dir = dir/dir.z * -1.0;
         dir.x =dir.x/(tan_fovy*aspect_ratio);
         dir.y = dir.y/tan_fovy;
         cc.i = int((dir.x*0.5 + 0.5)*image.res.x);
         cc.j = int((dir.y*0.5 + 0.5)*image.res.y);
+        //todo: fix -1
 
         cc.j =  image.res.y - cc.j -1;
         if(cc.i>=image.res.x || cc.j >= image.res.y || cc.j<0 || cc.i<0){
             cc.i = -1;
             cc.j = -1;
         }
+        //todo: account for x
+        cc.factor = 1.0/(n_dir.z*n_dir.z *n_d_l*n_d_l *tan_fovy* tan_fovy);
 
         return cc;
 

@@ -4,15 +4,29 @@
 #include <math/math.h>
 #include <bxdf/material.h>
 
+
 namespace cpppt{
 
+class BxDF;
 struct Intersection{
     Vec3 texture_coords;
     Vec3 bitangent;
     Vec3 tangent;
     Vec3 normal;
+    Vec3 g_normal;
     Vec3 hitpoint;
+    bool computed_normal = false;
     std::shared_ptr<Material> material;
+    std::shared_ptr<BxDF> get_bxdf(){
+        if(!computed_normal){
+            normal = material->get_normal_mapped(texture_coords,tangent,bitangent,normal);
+            bitangent = normalized(cross(normal,tangent));
+            tangent = normalized(cross(bitangent,normal));
+            computed_normal = true;
+        }
+        return material->get_bxdf(texture_coords);
+    }
+
 };
 
 
