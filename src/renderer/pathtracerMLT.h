@@ -13,64 +13,6 @@
 #include <iostream>
 namespace cpppt{
 
-class MLTSampler: public Sampler{
-    std::vector<float> samples;
-    std::vector<float> old_samples;
-    RandomSampler s;
-    int i = 0;
-    float bigMutateProbability = 0.1;
-public:
-    MLTSampler(int seed): s(seed){}
-    float sample(){
-        while(i>=samples.size()){
-            samples.push_back(s.sample());
-        }
-        i++;
-        return samples.at(i-1);
-    }
-
-    void accept(){
-        //do nothing
-        i=0;
-    }
-
-    //todo: move? instead of copy?
-    void reject(){
-        i=0;
-        samples = old_samples;
-    }
-
-    void mutate(){
-        i=0;
-        old_samples = samples;
-        float ecs = s.sample();
-        if(ecs>bigMutateProbability){
-                //small mutate
-            for(int i = 0; i<samples.size(); i++){
-                float idc; //i don't care
-                samples.at(i) = std::modff(samples.at(i) + 0.1*(s.sample()-0.5),&idc);
-                samples.at(i) = samples.at(i)<0.0?samples.at(i)+1.0:samples.at(i);
-            }
-        } else {
-            for(int i = 0; i<samples.size(); i++){
-                samples.at(i) = s.sample();
-            }
-        }
-
-    }
-    const std::vector<float>& sample_vector(){
-        return samples;
-    }
-    const std::vector<float>& old_sample_vector(){
-        return old_samples;
-    }
-
-    void set_sample(const std::vector<float>& sample){
-        samples = sample;
-    }
-
-};
-
 class PathtracerMLT : public Renderer{
     int samples;
 
