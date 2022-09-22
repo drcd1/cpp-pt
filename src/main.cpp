@@ -3,7 +3,7 @@
 #include <renderer/debug_renderer.h>
 #include <renderer/Pathtracer.h>
 #include <renderer/Lighttracer.h>
-#include <renderer/pathtracerMLT.h>
+#include <renderer/pathtracerMLTstrat1.h>
 #include <primitive/simple_group.h>
 #include <primitive/bvh.h>
 #include <shape/mesh.h>
