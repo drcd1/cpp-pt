@@ -23,19 +23,24 @@ def compare_images(imageA, imageB):
     fig = plt.figure("Compare")
     plt.suptitle("MSE: %.2f" % (m))#, SSIM: %.2f" % (m, s))
     # show first image
-    ax = fig.add_subplot(1, 3, 1)
+    ax = fig.add_subplot(2, 2, 1)
     plt.imshow(imageA, vmin=0,vmax=255,cmap = plt.cm.gray)
     plt.axis("off")
     # show the second image
-    ax = fig.add_subplot(1, 3, 2)
+    ax = fig.add_subplot(2, 2, 2)
     plt.imshow(imageB,  vmin=0,vmax=255,cmap = plt.cm.gray)
     plt.axis("off")
-    ax = fig.add_subplot(1, 3, 3)
 
+    ax = fig.add_subplot(2, 2, 3)
     help = abs(imageA-imageB);
-
     plt.imshow(help, cmap = plt.cm.plasma)
     plt.axis("off")
+
+    ax = fig.add_subplot(2, 2, 4)
+    help = abs(imageA/imageB);
+    plt.imshow(help, cmap = plt.cm.plasma)
+    plt.axis("off")
+
 
     plt.show()
 

@@ -728,7 +728,7 @@ inline float sinTheta(const Vec3& w){
 inline float cosPhi(const Vec3& w){
     if(sinTheta(w)==0.0) return 1.0;
     /*Todo: clamp?*/
-    return w.y/sinTheta(w);
+    return w.x/sinTheta(w);
 }
 
 inline float sinPhi(const Vec3& w){

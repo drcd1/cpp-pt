@@ -58,7 +58,7 @@ public:
                 //small mutate
             for(int i = 0; i<samples.size(); i++){
                 float idc; //i don't care
-                samples.at(i) = std::modff(samples.at(i) + 0.03*(s.sample()-0.5),&idc);
+                samples.at(i) = std::modff(samples.at(i) + 0.06*(s.sample()-0.5),&idc);
                 samples.at(i) = samples.at(i)<0.0?samples.at(i)+1.0:samples.at(i);
             }
         } else {

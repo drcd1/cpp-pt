@@ -124,6 +124,7 @@ namespace Loader{
             ld->s->camera = std::make_shared<CameraPerspective>(
                 Vec2i(ld->rs->resX,ld->rs->resY), tan_fovy, origin, normalized(at-origin), up
             );
+            std::cout<<"finished camera"<<std::endl;
         }
         inline void parse_light(LoaderData* ld, std::istringstream& iss){
             std::string type;
@@ -274,8 +275,12 @@ namespace Loader{
                     rs->renderer = RenderSettings::RendererType::LIGHTTRACER;
                 } else if(rtype=="pathtracer"){
                     rs->renderer = RenderSettings::RendererType::PATHTRACER;
-                } else if(rtype=="pathtracer_mlt"){
+                } else if(rtype=="pathtracer_mis"){
+                    rs->renderer = RenderSettings::RendererType::PATHTRACER_MIS;
+                }else if(rtype=="pathtracer_mlt"){
                     rs->renderer = RenderSettings::RendererType::PATHTRACER_MLT;
+                }else if(rtype=="lighttracer_mlt"){
+                    rs->renderer = RenderSettings::RendererType::LIGHTTRACER_MLT;
                 }else {
                     throw std::runtime_error("Unknown renderer type: " + rtype);
                 }
@@ -283,6 +288,10 @@ namespace Loader{
                 iss>>rs->spp;
             } else if (type == "resolution") {
                 iss>>rs->resX>>rs->resY;
+            } else if (type == "scene") {
+                iss>>rs->scene_name;
+            } else if (type == "output") {
+                iss>>rs->output_name;
             } else if (type!="") {
                 throw std::runtime_error("Unknown render setting: " + type);
             }

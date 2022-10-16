@@ -42,7 +42,9 @@ class Lighttracer : public Renderer{
                 break;
             } else {
                 auto bsdf = intersection.get_bxdf();
-
+                if(bsdf->is_emitter()){
+                    break;
+                }
                 Vec3 sample_direction;
 
                 float p = bsdf->sample(sampler, ray.d*(-1.0), intersection, &sample_direction);

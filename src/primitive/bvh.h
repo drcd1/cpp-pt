@@ -33,8 +33,6 @@ struct BVHNode: public Primitive{
         bool tmp = right->intersect(r,is);
         intersected = left->intersect(r,is);
 
-
-
         return tmp | intersected;
     }
     virtual bool intersect_any(Ray& r) const {

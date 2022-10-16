@@ -40,7 +40,7 @@ class DiffuseBxDF: public BxDF{
         }
 
         float pdf(const Vec3& wo, const Vec3& wi,const Intersection& it) {
-            return dot(it.normal,wi)/M_PI;
+            return fabs(dot(it.normal,wi))/M_PI;
         }
 
 };

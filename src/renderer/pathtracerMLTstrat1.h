@@ -1,5 +1,5 @@
-#ifndef CPPPT_PATHTRACER_MLT
-#define CPPPT_PATHTRACER_MLT
+#ifndef CPPPT_PATHTRACER_MLT_STRAT1
+#define CPPPT_PATHTRACER_MLT_STRAT1
 
 #include <renderer/renderer.h>
 #include <math/math.h>

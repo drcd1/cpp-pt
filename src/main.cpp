@@ -3,7 +3,9 @@
 #include <renderer/debug_renderer.h>
 #include <renderer/Pathtracer.h>
 #include <renderer/Lighttracer.h>
-#include <renderer/pathtracerMLTstrat1.h>
+#include <renderer/pathtracerMLT.h>
+#include <renderer/pathtracerMIS.h>
+#include <renderer/lighttracerMLT.h>
 #include <primitive/simple_group.h>
 #include <primitive/bvh.h>
 #include <shape/mesh.h>
@@ -29,7 +31,7 @@ using namespace cpppt;
 
 int main(int argc, char** argv){
     try{
-    if(argc<4){
+    if(argc<2){
         std::cout<<"Insuficient Arguments"<<std::endl;
         return 0;
     }
@@ -38,18 +40,22 @@ int main(int argc, char** argv){
     Scene s;
     SceneData sd;
     Loader::load_render_settings(&rs,argv[1]);
-    Loader::load_scene(&s,&sd,&rs,argv[2]);
+    Loader::load_scene(&s,&sd,&rs,rs.scene_name);
 
     std::unique_ptr<Renderer> renderer;
 
     if(rs.renderer == RenderSettings::RendererType::PATHTRACER){
         renderer = std::make_unique<Pathtracer>(rs);
+    } else if(rs.renderer == RenderSettings::RendererType::PATHTRACER_MIS){
+        renderer = std::make_unique<PathtracerMIS>(rs);
     } else if(rs.renderer == RenderSettings::RendererType::LIGHTTRACER){
         renderer = std::make_unique<Lighttracer>(rs);
     } else if(rs.renderer == RenderSettings::RendererType::DEBUG){
         renderer = std::make_unique<DebugRenderer>();
     }  else if(rs.renderer == RenderSettings::RendererType::PATHTRACER_MLT){
         renderer = std::make_unique<PathtracerMLT>(rs);
+    } else if(rs.renderer == RenderSettings::RendererType::LIGHTTRACER_MLT){
+        renderer = std::make_unique<LighttracerMLT>(rs);
     }
 
     //DummyRenderer renderer;
@@ -62,7 +68,7 @@ int main(int argc, char** argv){
 
     auto t1 = high_resolution_clock::now();
 
-    renderer->render(s, argv[3]);
+    renderer->render(s, rs.output_name);
 
     auto t2 = high_resolution_clock::now();
     duration<double, std::milli> ms_double = t2 - t1;

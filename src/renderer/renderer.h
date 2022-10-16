@@ -9,12 +9,14 @@
 namespace cpppt{
 
 struct RenderSettings{
-    enum RendererType {PATHTRACER, LIGHTTRACER, DEBUG, PATHTRACER_MLT};
+    enum RendererType {PATHTRACER, PATHTRACER_MIS, LIGHTTRACER, DEBUG, PATHTRACER_MLT, LIGHTTRACER_MLT};
 
     RendererType renderer = RendererType::DEBUG;
     int spp = 1;
     int resX = 256;
     int resY = 256;
+    std::string scene_name = "";
+    std::string output_name = "";
 };
 
 class Renderer{

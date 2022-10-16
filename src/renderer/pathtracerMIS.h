@@ -1,5 +1,5 @@
-#ifndef CPPPT_PATHTRACER
-#define CPPPT_PATHTRACER
+#ifndef CPPPT_PATHTRACER_MIS
+#define CPPPT_PATHTRACER_MIS
 
 #include <renderer/renderer.h>
 #include <math/math.h>
@@ -7,12 +7,14 @@
 #include <image/rgb_image.h>
 #include <primitive/ray.h>
 #include <shape/intersection.h>
+#include <primitive/primitive_leaf.h>
 #include <scene.h>
 #include <math/sampler.h>
 #include <omp.h>
 #include <iostream>
+#include <light/shape_light.h>
 namespace cpppt{
-class Pathtracer : public Renderer{
+class PathtracerMIS : public Renderer{
     int samples;
 
     Vec3 render_sky(const Ray& r) const {
@@ -27,10 +29,10 @@ class Pathtracer : public Renderer{
     Vec3 integrate(const Scene& scene, const Vec2& coords, Sampler& sampler) const {
         Ray ray = scene.camera->get_ray(coords);
         Intersection intersection;
-        Intersection prev_intersection;
         Vec3 col(0.0);
         Vec3 mul(1.0);
         bool sampled_delta = true;
+        float p = 1.0;
         for(int i = 0; i<32; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
             if(!intersected){
@@ -40,40 +42,40 @@ class Pathtracer : public Renderer{
                 auto bsdf = intersection.get_bxdf();
                 if(bsdf->is_emitter()){
                     if(sampled_delta){
-                        col = col + mul*bsdf->emit(ray.d*(-1.0),intersection);
+
+                        //scene.light = dynamic_cast
+                        //float p_bsdf_nee = scene.light->pdf(static_cast<std::shared_ptr<EmissiveBxDF>>(bsdf))
+                        //float p_bsdf_nee  = scene.light->pdf()*(r*r)/bsdf_cos;
+
+                        Vec3 rad = bsdf->emit(ray.d*(-1.0),intersection);
+
+                        col = col + mul*rad;
+                    } else {
+                        float p_bsdf_bsdf = p;
+
+                        auto lid = intersection.primitive->get_light()->get_group();
+
+                        float r = ray.max_t;
+                        float cos_theta = fabs(dot(intersection.normal,ray.d)) + EPS;
+                        float p_bsdf_nee = scene.light->pdf(lid.first,lid.second, intersection.texture_coords,ray.o)*r*r/cos_theta;
+
+                        float w_mis = p_bsdf_bsdf/(p_bsdf_bsdf+p_bsdf_nee);
+
+                        Vec3 rad = bsdf->emit(ray.d*(-1.0),intersection);
+                        col = col + mul*rad*w_mis;
                     }
-                    break;
+                    break; //emitters do not reflect!
                 }
                 sampled_delta = false;
-
-
-//               if(bsdf->is_emitter()){
-
-
-                /*don't compute emission*/
-                    //compute MIS weights
-                    //float p_bsdf_nee  = scene.lights.pdf(intersection, prev_intersection)*(r*r)/bsdf_cos;
-                    //float p_bsdf_bsdf = p;
-                    //float w_bsdf = p_bsdf_bsdf/(p_bsdf_nee + p_bsdf_bsdf);
-                    //col =  col + mul* bsdf->emit(ray.d*(-1.0),intersection);
-//                }
 
 
 
                 Vec3 sample_direction;
                 //float w_bsdf;
 
-                float p = bsdf->sample(sampler, ray.d*(-1.0), intersection, &sample_direction);
+                p = bsdf->sample(sampler, ray.d*(-1.0), intersection, &sample_direction);
 
-                //if sample is not valid, full absorption
-
-                //note: p does not include the cosine term
-
-                //float bsdf_cos = fabs(dot(ray.d,intersection.normal));
-                //float r = (intersection.hitpoint - ray.o).length();
-
-
-
+                //TODO: if sample is not valid, full absorption
 
                 /* NEE */
                 if(!bsdf->is_delta()){
@@ -89,16 +91,30 @@ class Pathtracer : public Renderer{
 
                     if(bsdf->non_zero(intersection,ray.d*(-1.0),shadow_ray.d)){
                     if(!scene.primitive->intersect_any(shadow_ray)){
+                        if(std::isnan(col.x) || std::isnan(col.y) || std::isnan(col.z)){
+                            std::cout<<"NAN!whaa"<<std::endl;
+                        }
+
+
                         //float cosine_term = 1.0;
                         //if(!light_sample.ref->is_delta())
                         //    float cosine_term = fabs(dot(light_sample.normal,shadow_ray.d));
                        /*TODO:why doesn't the cosine term here work?*/
                         float r = len;
-                        col = col + mul*bsdf->eval(
+                        float p_nee_bsdf = bsdf->pdf(ray.d*(-1.0),s_dir,intersection);
+                        float cosine_term = fabs(dot(light_sample.normal,s_dir))+EPS;
+                        float p_nee_nee = light_sample.pdf*r*r/cosine_term;
+                        float w_mis = p_nee_nee/(p_nee_bsdf + p_nee_nee);
+
+                        Vec3 eval = bsdf->eval(
                             ray.d*(-1.0),
                             shadow_ray.d,
                             intersection
-                        )*light_sample.intensity/(light_sample.pdf*r*r);
+                        );
+                        col = col + mul*eval*light_sample.intensity/(light_sample.pdf*r*r)*w_mis;
+                        if (std::isnan(col.x) || std::isnan(col.y) || std::isnan(col.z) ) {
+                            std::cout<<"NAN!2"<<std::endl;
+                        }
                     }
                     }
                 } else {
@@ -117,7 +133,6 @@ class Pathtracer : public Renderer{
 
                 Vec3 eval = bsdf->eval(ray.d*(-1.0), sample_direction, intersection);
 
-
                 if(i>2){
                     float rr = russian_roulette(eval);
                     if(sampler.sample() > rr) {
@@ -125,20 +140,18 @@ class Pathtracer : public Renderer{
                     }
                     p = p*rr;
                 }
-
                 mul = mul*eval/p;
-                //if(!sampled_delta)
-                    ray = Ray(intersection.hitpoint+sample_direction*EPS, sample_direction);
-                //else
-                  //  ray = Ray(intersection.hitpoint+ray.d*EPS, ray.d);
-                prev_intersection = intersection;
+                if(std::isnan(mul.x) || std::isnan(mul.y) || std::isnan(mul.z)){
+                    std::cout<<"NAN!2"<<std::endl;
+                }
+                ray = Ray(intersection.hitpoint+sample_direction*EPS, sample_direction);
             }
         }
         return col;
     }
 
 public:
-    Pathtracer(const RenderSettings& rs): samples(rs.spp) {}
+    PathtracerMIS(const RenderSettings& rs): samples(rs.spp) {}
 
     void render(Scene& sc, std::string filename) const {
         RgbImage* image= &(sc.camera->get_image());

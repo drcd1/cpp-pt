@@ -21,6 +21,9 @@ inline float char2float(unsigned char a){
 }
 
 inline void put2char1(float a, unsigned char* pix){
+    if(std::isnan(a)){
+        std::cout<<"NAN!"<<std::endl;
+    }
     if(a<=0.0)
         a = 0.0;
     if(a>=0.99999){
@@ -295,21 +298,22 @@ public:
     }
 
     void save(std::string filename, ImageDef::COLOR_SPACE is = ImageDef::SRGB){
-        if(is == ImageDef::SRGB){
+        {
             std::vector<unsigned char> data(res.x*res.y*3);
 
             for(int i = 0; i<pixels.size(); i++){
                 auto p = pixel_ops::linear2srgb(pixels.at(i));
                 pixel_ops::put2char(p,&data.at(i*3));
             }
-            stbi_write_png(filename.c_str(), res.x,res.y,3, (void*)data.data(),res.x*3);
+            stbi_write_png((filename+".png").c_str(), res.x,res.y,3, (void*)data.data(),res.x*3);
 
-        } else if(is==ImageDef::LINEAR){
+        }
+        {
             std::vector<float> data(res.x*res.y*3);
             for(int i = 0; i<pixels.size(); i++){
                 pixel_ops::put2float(pixels.at(i),&data.at(i*3));
             }
-            stbi_write_hdr(filename.c_str(), res.x,res.y,3,data.data());
+            stbi_write_hdr((filename+".hdr").c_str(), res.x,res.y,3,data.data());
         }
     }
 

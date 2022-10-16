@@ -31,21 +31,32 @@ struct LightPathStart
 };
 
 class Light{
+private:
+    int id = -1;
+    Light* parent = nullptr;
 
 public:
 
     virtual LightSample connect_eye_path(Sampler&, const Intersection&) const= 0;
     //virtual Ray generate_light_ray(Sampler&);
 
-
-    //pdf of
-    virtual float pdf(LightSample) const {return 1.0;}
-
     virtual LightPathStart sample(Sampler&) const = 0;
 
 
     virtual bool is_delta() const {
         return true;
+    }
+    virtual float pdf(int l_id, const Light* parent, const Vec3& coords, const Vec3& lit) const {
+        return 1.0;
+    }
+
+    void set_group(int a_id, Light* a_parent){
+        id = a_id;
+        parent = a_parent;
+    }
+
+    std::pair<int,const Light*> get_group() const {
+        return {id,parent};
     }
 
 };

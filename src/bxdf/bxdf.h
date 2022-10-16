@@ -17,7 +17,20 @@ class BxDF{
         virtual bool is_delta(){ return false;}
 
         virtual float emit_sample(Sampler& sample, const Intersection& it, Vec3* sample_direction){
-            return 0.0;
+            throw std::runtime_error("not implemented");
+            return 1.0;
+            float a = sample.sample();
+            float b = sample.sample();
+            Vec3 normal;
+            normal = it.normal;
+            if(a>0.5){
+                a = a*2.0-1.0;
+                normal = normal*(-1.0);
+            } else {
+                a = a*2.0;
+            }
+
+
         }
 
         bool same_hemisphere(const Intersection& i, const Vec3& wo, const Vec3& wi){

@@ -5,9 +5,13 @@
 #include <bxdf/material.h>
 
 
+
 namespace cpppt{
 
+class Shape;
+class PrimitiveLeaf;
 class BxDF;
+
 struct Intersection{
     Vec3 texture_coords;
     Vec3 bitangent;
@@ -16,6 +20,7 @@ struct Intersection{
     Vec3 g_normal;
     Vec3 hitpoint;
     bool computed_normal = false;
+    const PrimitiveLeaf* primitive;
     std::shared_ptr<Material> material;
     std::shared_ptr<BxDF> get_bxdf(){
         if(!computed_normal){

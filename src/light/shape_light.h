@@ -9,7 +9,9 @@ class ShapeLight: public Light {
 private:
     std::shared_ptr<PrimitiveLeaf> primitive;
 public:
-    ShapeLight(std::shared_ptr<PrimitiveLeaf> primitive) : primitive(primitive){};
+    ShapeLight(std::shared_ptr<PrimitiveLeaf> primitive) : primitive(primitive){
+        primitive->set_light(this);
+    };
 
     //for NEE
     LightSample connect_eye_path(Sampler& s, const Intersection& from) const {
@@ -34,10 +36,8 @@ public:
         /*TODO: divide by 2pi ??*/
     }
 
-    float pdf(const Intersection& point, Vec3 wo){
-       throw "not implemented";
-       return 0;
-       // return (1.0/(primitive->shape().area()))*primtive->material().pdf(wo);
+    float pdf(int l_id, const Light* parent, const Vec3& coords, const Vec3& lit) const {
+        return 1.0/primitive->get_shape()->area();
     }
 
     LightPathStart sample(Sampler& s) const {
