@@ -91,9 +91,6 @@ class PathtracerMIS : public Renderer{
 
                     if(bsdf->non_zero(intersection,ray.d*(-1.0),shadow_ray.d)){
                     if(!scene.primitive->intersect_any(shadow_ray)){
-                        if(std::isnan(col.x) || std::isnan(col.y) || std::isnan(col.z)){
-                            std::cout<<"NAN!whaa"<<std::endl;
-                        }
 
 
                         //float cosine_term = 1.0;
@@ -112,9 +109,6 @@ class PathtracerMIS : public Renderer{
                             intersection
                         );
                         col = col + mul*eval*light_sample.intensity/(light_sample.pdf*r*r)*w_mis;
-                        if (std::isnan(col.x) || std::isnan(col.y) || std::isnan(col.z) ) {
-                            std::cout<<"NAN!2"<<std::endl;
-                        }
                     }
                     }
                 } else {
@@ -141,9 +135,6 @@ class PathtracerMIS : public Renderer{
                     p = p*rr;
                 }
                 mul = mul*eval/p;
-                if(std::isnan(mul.x) || std::isnan(mul.y) || std::isnan(mul.z)){
-                    std::cout<<"NAN!2"<<std::endl;
-                }
                 ray = Ray(intersection.hitpoint+sample_direction*EPS, sample_direction);
             }
         }

@@ -149,7 +149,7 @@ public:
         return 1.0 / (1.0 + lambda(w));
     }
 
-    float pdf(const Vec3& wo, const Vec3& wh) const {
+    float   pdf(const Vec3& wo, const Vec3& wh) const {
         return d(wh) * g1(wo) * fabs(dot(wo, wh)) / fabs(cosTheta(wo));
     }
 

@@ -7,6 +7,7 @@
 #include <texture/texture.h>
 #include <math/math.h>
 #include <math/microfacet_distribution.h>
+#include <algorithm>
 
 namespace cpppt{
 
@@ -26,7 +27,10 @@ class GlossyBxDF: public BxDF{
             Vec3 wi_loc = normalized(coords.transpose()*(wi));
             Vec3 wh = normalized(wo_loc+wi_loc);
             MicrofacetDistribution md(alpha,alpha);
-            return md.g(wo_loc,wi_loc)*md.d(wh)/(4.0*dot(wo,it.normal));
+            Vec3 ret = md.g(wo_loc,wi_loc)*md.d(wh)/(4.0*dot(wo,it.normal));
+            if(std::isnan(ret.x) || std::isnan(ret.y) || std::isnan(ret.z))
+                std::cout<<"nannn21"<<std::endl;
+            return ret;
 
         }
         float sample(Sampler& sampler, const Vec3& wo, const Intersection& it, Vec3* sample_direction) {
@@ -46,14 +50,14 @@ class GlossyBxDF: public BxDF{
             Vec3 wo_loc = coords.transpose()*(wo);
 
             Vec3 wh = normalized(coords.transpose()*(wo+wi));
-            return MicrofacetDistribution(alpha,alpha).pdf(wo_loc, wh);
+            return MicrofacetDistribution(alpha,alpha).pdf(wo_loc, wh)/(4.0*fabs(dot(wo_loc,wh)));
         }
         Vec3 emit(const Vec3& wo, const Intersection& it) {
             return Vec3(0.0);
         }
 
         static float roughness2Alpha(float roughness) {
-            return roughness*roughness;
+            return std::max(roughness*roughness,0.01f);
         }
 /*
         bool is_delta() override {

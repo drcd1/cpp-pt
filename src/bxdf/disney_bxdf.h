@@ -52,14 +52,15 @@ class DisneyBxDF: public BxDF{
         roughness(roughness), specular(specular*0.08), transparent(transparent),ior(ior), delta(roughness<0.01?true:false) {}
 
 
-        virtual bool non_zero(const Intersection& i, const Vec3& wi, const Vec3& wo){
-            return same_hemisphere(i,wi,wo);
-        }
-
         Vec3 eval(const Vec3& wo, const Vec3& wi,const Intersection& it) {
 
+            auto it2 = it;
+            if(dot(it.g_normal, wo)<0.0){
+                it2.g_normal = it.g_normal*(-1.0);
+                it2.normal = it.normal*(-1.0);
+            }
             Vec3 ret(0.0);
-            if( same_hemisphere(it,wi,wo)){
+            if( same_hemisphere(it2,wi,wo)){
                 Vec3 hv = compute_halfway_vector(wi,wo);
                 float fr0 = fresnel_schlick(specular, dot(hv,wi));
                 Vec3 fr0_m;
@@ -83,17 +84,15 @@ class DisneyBxDF: public BxDF{
                 if(s>EPS || m>EPS){
                     Vec3 tmp(1.0);
                     if(!delta){
-                        tmp = GlossyBxDF(roughness).eval(wo,wi,it);
+                        tmp = GlossyBxDF(roughness).eval(wo,wi,it2);
                     }
                     ret = ret + tmp*s + tmp*fr0_m*m;
                 }
 
                 if(d>EPS){
-                    ret = ret + DiffuseBxDF(albedo).eval(wo,wi,it)*d;
+                    ret = ret + DiffuseBxDF(albedo).eval(wo,wi,it2)*d;
                 }
-                if(std::isnan(ret.x) || std::isnan(ret.y) || std::isnan(ret.z) ){
-                    std::cout<<"NAN3!"<<std::endl;
-                }
+
             }
            // if(t>EPS){
                 /*
@@ -111,11 +110,16 @@ class DisneyBxDF: public BxDF{
             Vec3 diff_sample;
             Vec3 spec_sample;
             Vec3 transp_sample;
+            auto it2 = it;
+            if(dot(it.g_normal, wo)<0.0){
+                it2.g_normal = it.g_normal*(-1.0);
+                it2.normal = it.normal*(-1.0);
+            }
 
             DiffuseBxDF diff(albedo);
             GlossyBxDF glossy(roughness);
             Vec3 sd_g;
-            float pg = glossy.sample(sampler,wo,it,&sd_g);
+            float pg = glossy.sample(sampler,wo,it2,&sd_g);
             Vec3 hv = compute_halfway_vector(sd_g,wo);
             float fr0 = fresnel_schlick(specular, dot(hv,sd_g));
 
@@ -131,9 +135,6 @@ class DisneyBxDF: public BxDF{
             float r = sampler.sample();
             if(r<(s+m)){ //reflect
                 *sample_direction = sd_g;
-                if(std::isnan((s+m)*pg)){
-                    std::cout<<"NAN53"<<std::endl;
-                }
                 return (s+m)*pg;
             } else if(r<s+m+t){ //refract
             /*
@@ -146,10 +147,7 @@ class DisneyBxDF: public BxDF{
             return 0.0;
 
             } else {
-                float p =  diff.sample(sampler,wo,it,sample_direction)*d;
-                if(std::isnan(p)){
-                    std::cout<<"NAN523"<<std::endl;
-                }
+                float p =  diff.sample(sampler,wo,it2,sample_direction)*d;
 
                 return p;
             }
@@ -158,10 +156,17 @@ class DisneyBxDF: public BxDF{
 
         float pdf(const Vec3& wo, const Vec3& wi, const Intersection& it){
             //if wi is on the other side, compute the hv and wi as reflect
-            if(non_zero(it, wi,wo)){
+
+            auto it2 = it;
+            if(dot(it.g_normal, wo)<0.0){
+                it2.g_normal = it.g_normal*(-1.0);
+                it2.normal = it.normal*(-1.0);
+            }
+
+            if(!non_zero(it2, wi,wo)){
                 return 0.0;
             }
-            Vec3 hv = wi+wo;
+            Vec3 hv = normalized(wi+wo);
             float fr0 = fresnel_schlick(specular, dot(hv,wi));
 
             float s = fr0;
@@ -169,10 +174,7 @@ class DisneyBxDF: public BxDF{
             float m = metalness * (1.0-transparent) * (1.0-fr0);
             //todo: weight diffuse better
             float d = (1.0-(fr0)) * (1.0-metalness) * (1.0 -transparent);
-            float ret = DiffuseBxDF(albedo).pdf(wo,wi,it)*d +  GlossyBxDF(roughness).pdf(wo,wi,it)*(s+m);
-            if(std::isnan(ret)){
-                std::cout<<"NAN4!<"<<std::endl;
-            }
+            float ret = DiffuseBxDF(albedo).pdf(wo,wi,it2)*d +  GlossyBxDF(roughness).pdf(wo,wi,it2)*(s+m);
 
             return ret;
 

@@ -281,6 +281,10 @@ namespace Loader{
                     rs->renderer = RenderSettings::RendererType::PATHTRACER_MLT;
                 }else if(rtype=="lighttracer_mlt"){
                     rs->renderer = RenderSettings::RendererType::LIGHTTRACER_MLT;
+                }else if(rtype=="pure_pt"){
+                    rs->renderer = RenderSettings::RendererType::PURE_PT;
+                }else if(rtype=="validation"){
+                    rs->renderer = RenderSettings::RendererType::VALIDATION;
                 }else {
                     throw std::runtime_error("Unknown renderer type: " + rtype);
                 }

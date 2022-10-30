@@ -9,7 +9,13 @@
 namespace cpppt{
 
 struct RenderSettings{
-    enum RendererType {PATHTRACER, PATHTRACER_MIS, LIGHTTRACER, DEBUG, PATHTRACER_MLT, LIGHTTRACER_MLT};
+    enum RendererType {PATHTRACER,
+                        PATHTRACER_MIS,
+                        LIGHTTRACER, DEBUG,
+                        PATHTRACER_MLT,
+                        LIGHTTRACER_MLT,
+                        PURE_PT,
+                        VALIDATION};
 
     RendererType renderer = RendererType::DEBUG;
     int spp = 1;

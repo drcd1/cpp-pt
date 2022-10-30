@@ -44,10 +44,10 @@ class StandardMaterial : public Material{
          }
 
         std::shared_ptr<BxDF> get_bxdf(const Vec3& uv) const {
-            //if(metal->sample(uv).x < 0.1)
+           if(metal->sample(uv).x < 0.1)
 
-            //return std::make_shared<DiffuseBxDF>(albedo->sample(uv));
-            return std::make_shared<DisneyBxDF>(
+           return std::make_shared<DiffuseBxDF>(albedo->sample(uv));
+           /* return std::make_shared<DisneyBxDF>(
             albedo->sample(uv),
             metal->sample(uv).x,
             roughness->sample(uv).x,
@@ -55,9 +55,9 @@ class StandardMaterial : public Material{
             transparent->sample(uv).x,
             ior->sample(uv).x
 
-            );
-            //else
-            //return std::make_shared<GlossyBxDF>(roughness->sample(uv).x);
+            );*/
+            else
+            return std::make_shared<GlossyBxDF>(roughness->sample(uv).x);
         }
 
         //TODO:double check normal decoding

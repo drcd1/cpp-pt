@@ -6,6 +6,7 @@
 #include <renderer/pathtracerMLT.h>
 #include <renderer/pathtracerMIS.h>
 #include <renderer/lighttracerMLT.h>
+#include <renderer/pure_pt.h>
 #include <primitive/simple_group.h>
 #include <primitive/bvh.h>
 #include <shape/mesh.h>
@@ -16,6 +17,7 @@
 #include <texture/constant_texture.h>
 #include <bxdf/mirror_bxdf.h>
 #include <bxdf/refraction_bxdf.h>
+#include <time.h>
 
 #include <light/light.h>
 #include <light/point_light.h>
@@ -26,8 +28,45 @@
 #include <scene.h>
 #include <chrono>
 
-
+//NOTE: sometimes, sample is not zero, but prob is zero?!
+//I think we are dealing with this in the renderer by discarding invalid samples
+//but i need to check if this only happens for invalid samples
+// if so, why nans?
 using namespace cpppt;
+
+void runValidation(){
+    Intersection it;
+    it.normal = Vec3(0,0,1);
+    it.tangent = Vec3(1,0,0);
+    it.bitangent = Vec3(0,1,0);
+    it.g_normal= it.normal;
+    it.hitpoint = Vec3(0,0,0);
+    it.computed_normal = true;
+    it.texture_coords = Vec3(0.0);
+    it.material = std::make_shared<StandardMaterial>(
+      std::make_shared<ConstantTexture<Vec3>>(Vec3(0.8f,0.9f,0.8f)),
+      std::make_shared<ConstantTexture<Vec3>>(Vec3(0.5f,0.5f,1.0f)),
+      std::make_shared<ConstantTexture<float>>(0.5f),
+      std::make_shared<ConstantTexture<float>>(0.5f),
+      std::make_shared<ConstantTexture<float>>(0.0f),
+      std::make_shared<ConstantTexture<float>>(1.23f),
+      std::make_shared<ConstantTexture<float>>(0.0f),
+      std::make_shared<ConstantTexture<float>>(0.0f)
+    );
+
+    auto bxdf = it.get_bxdf();
+    Vec3 eye = normalized(Vec3(-1.0,1.0,0.3));
+    Vec3 light;
+    RandomSampler s(time(NULL));
+    float p = bxdf->sample(s,eye,it,&light);
+    std::cout<<"Light sampled: "<<light.x<<" "<<light.y<<" "<<light.z<<std::endl;
+    std::cout<<"Prob: "<<p<<std::endl;
+    std::cout<<"pdf: "<<bxdf->pdf(eye,light,it)<<std::endl;
+    Vec3 eval = bxdf->eval(eye,light,it);
+    std::cout<<"eval: "<<eval.x<<" "<<eval.y<<" "<<eval.z<<std::endl;
+
+
+}
 
 int main(int argc, char** argv){
     try{
@@ -56,6 +95,11 @@ int main(int argc, char** argv){
         renderer = std::make_unique<PathtracerMLT>(rs);
     } else if(rs.renderer == RenderSettings::RendererType::LIGHTTRACER_MLT){
         renderer = std::make_unique<LighttracerMLT>(rs);
+    } else if(rs.renderer == RenderSettings::RendererType::PURE_PT){
+        renderer = std::make_unique<PurePt>(rs);
+    }else if(rs.renderer == RenderSettings::RendererType::VALIDATION){
+        runValidation();
+        return 0;
     }
 
     //DummyRenderer renderer;
