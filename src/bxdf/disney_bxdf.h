@@ -106,7 +106,7 @@ class DisneyBxDF: public BxDF{
             return ret;
 
         }
-        virtual float sample(Sampler& sampler, const Vec3& wo, const Intersection& it, Vec3* sample_direction) {
+        BxDFSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) {
             Vec3 diff_sample;
             Vec3 spec_sample;
             Vec3 transp_sample;
@@ -119,7 +119,9 @@ class DisneyBxDF: public BxDF{
             DiffuseBxDF diff(albedo);
             GlossyBxDF glossy(roughness);
             Vec3 sd_g;
-            float pg = glossy.sample(sampler,wo,it2,&sd_g);
+            BxDFSample gl_samp = glossy.sample(sampler,wo,it2);
+            sd_g = gl_samp.wi;
+            float pg = gl_samp.pdf;
             Vec3 hv = compute_halfway_vector(sd_g,wo);
             float fr0 = fresnel_schlick(specular, dot(hv,sd_g));
 
@@ -134,8 +136,7 @@ class DisneyBxDF: public BxDF{
             //just choose a random based on weights
             float r = sampler.sample();
             if(r<(s+m)){ //reflect
-                *sample_direction = sd_g;
-                return (s+m)*pg;
+                return BxDFSample(sd_g,(s+m)*pg,gl_samp.delta);
             } else if(r<s+m+t){ //refract
             /*
                 Intersection new_inter = intersection;
@@ -143,13 +144,16 @@ class DisneyBxDF: public BxDF{
                 //todo:check if prob is the same for refraction
                 return RefractionBxDF(ior).sample(sampler,wo,Intersection,sample_direction)*pg*t
             */
-
-            return 0.0;
+                //RefractionBxDF rbxdf(ior);
+                //BxDFSample refraction_sample = rbxdf.sample(sampler, wo,it);
+                return BxDFSample(sd_g, 1.0,true);
+                //return refraction_sample;
 
             } else {
-                float p =  diff.sample(sampler,wo,it2,sample_direction)*d;
 
-                return p;
+                BxDFSample diff_samp =  diff.sample(sampler,wo,it2);
+                diff_samp.pdf *= d;
+                return diff_samp;
             }
 
         };

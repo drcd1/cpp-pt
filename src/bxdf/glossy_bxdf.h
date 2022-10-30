@@ -15,11 +15,12 @@ namespace cpppt{
 class GlossyBxDF: public BxDF{
     private:
         float alpha;
+        bool delta;
 
 
 
     public:
-        GlossyBxDF(float roughness): alpha(roughness2Alpha(roughness)) {}
+        GlossyBxDF(float roughness): alpha(roughness2Alpha(roughness)), delta(roughness<0.01) {}
 
         Vec3 eval(const Vec3& wo, const Vec3& wi,const Intersection& it) {
             Mat3 coords(it.tangent,it.bitangent,it.normal);
@@ -33,22 +34,23 @@ class GlossyBxDF: public BxDF{
             return ret;
 
         }
-        float sample(Sampler& sampler, const Vec3& wo, const Intersection& it, Vec3* sample_direction) {
-
+        BxDFSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) {
+            if(delta){
+                return BxDFSample(reflect(wo,it.normal),1.0,true);
+            }
             Mat3 coords(it.tangent,it.bitangent,it.normal);
             MicrofacetDistribution md(alpha,alpha);
             Vec3 wo_loc = coords.transpose()*(wo);
             Vec3 wh_loc = normalized(md.sample(wo_loc,sampler));
             Vec3 wh = normalized(coords*(wh_loc));
             float p = md.pdf(wo_loc,wh_loc);
-            *sample_direction = reflect(wo,wh);
-            return pdf(wo,*sample_direction,it);
+            Vec3 sample_direction = reflect(wo,wh);
+            return BxDFSample(sample_direction, pdf(wo,sample_direction,it), false);
         };
 
         float pdf(const Vec3& wo, const Vec3& wi, const Intersection& it){
             Mat3 coords(it.tangent,it.bitangent,it.normal);
             Vec3 wo_loc = coords.transpose()*(wo);
-
             Vec3 wh = normalized(coords.transpose()*(wo+wi));
             return MicrofacetDistribution(alpha,alpha).pdf(wo_loc, wh)/(4.0*fabs(dot(wo_loc,wh)));
         }

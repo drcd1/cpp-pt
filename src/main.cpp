@@ -56,9 +56,12 @@ void runValidation(){
 
     auto bxdf = it.get_bxdf();
     Vec3 eye = normalized(Vec3(-1.0,1.0,0.3));
-    Vec3 light;
+
     RandomSampler s(time(NULL));
-    float p = bxdf->sample(s,eye,it,&light);
+    BxDFSample sample = bxdf->sample(s,eye,it);
+    Vec3 light = sample.wi;
+    float p = sample.pdf;
+
     std::cout<<"Light sampled: "<<light.x<<" "<<light.y<<" "<<light.z<<std::endl;
     std::cout<<"Prob: "<<p<<std::endl;
     std::cout<<"pdf: "<<bxdf->pdf(eye,light,it)<<std::endl;

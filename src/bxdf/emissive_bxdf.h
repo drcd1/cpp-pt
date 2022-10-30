@@ -20,9 +20,9 @@ class EmissiveBxDF: public BxDF{
         Vec3 eval(const Vec3& wo, const Vec3& wi,const Intersection& it) {
             return Vec3(0.0,0.0,0.0);
         }
-        float sample(Sampler& sampler, const Vec3& wo, const Intersection& it, Vec3* sample_direction) {
+        BxDFSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) {
             throw std::runtime_error("We should never do this!");
-            return -1.0;
+            return BxDFSample(Vec3(0.0),-1.0,true);
         };
 
 

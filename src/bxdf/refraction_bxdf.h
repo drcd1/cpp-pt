@@ -17,9 +17,9 @@ class RefractionBxDF: public BxDF{
     public:
         RefractionBxDF(float ior):ior(ior){}
         Vec3 eval(const Vec3& wo, const Vec3& wi,const Intersection& it) {
-            return Vec3(-1.0,-1.0,-1.0);
+            return Vec3(1.0,1.0,1.0);
         }
-        float sample(Sampler& sampler, const Vec3& wo, const Intersection& it, Vec3* sample_direction) {
+        BxDFSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) {
             //Vec3 n = correct_normal(it.normal, wo);
 
             Vec3 n = it.normal;
@@ -42,19 +42,16 @@ class RefractionBxDF: public BxDF{
             if(cosThetaTSqr <0){
                 r = normalized(wo*(-1.0) + it.normal*dot(it.normal,wo)*2.0);
             }
-            *sample_direction = r;
+            Vec3 sample_direction = r;
             //*sample_direction = normalized(wo*(-1.0));
-            return -1.0;
+            return BxDFSample(sample_direction,1.0,true);
         }
 
         float pdf(const Vec3& wo, const Vec3& wi,const Intersection& it) {
-            return -1.0;
+            return 1.0;
         }
         Vec3 emit(const Vec3& wo, const Intersection& it) {
             return Vec3(0.0);
-        }
-        bool is_delta(){
-            return true;
         }
 
 

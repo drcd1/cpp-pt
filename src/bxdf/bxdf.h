@@ -6,15 +6,21 @@
 #include <shape/intersection.h>
 namespace cpppt{
 
+struct BxDFSample{
+    Vec3 wi;
+    float pdf;
+    bool delta;
+
+    BxDFSample(const Vec3& wi, float pdf, bool delta): wi(wi),pdf(pdf),delta(delta){}
+};
+
 class BxDF{
     public:
         virtual Vec3 eval(const Vec3& wo, const Vec3& wi,const Intersection& it) = 0;
-        virtual float sample(Sampler& sampler, const Vec3& wo, const Intersection& it,
-        Vec3* sample_direction) = 0;
+        virtual BxDFSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) = 0;
         virtual float pdf(const Vec3& wo, const Vec3& wi,const Intersection& it) = 0;
         virtual Vec3 emit(const Vec3& wo, const Intersection& it) = 0;
         virtual bool is_emitter(){return false;}
-        virtual bool is_delta(){ return false;}
 
         virtual float emit_sample(Sampler& sample, const Intersection& it, Vec3* sample_direction){
             throw std::runtime_error("not implemented");

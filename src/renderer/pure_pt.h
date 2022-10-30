@@ -43,10 +43,10 @@ class PurePt : public Renderer{
                     break;
                 }
 
-                Vec3 sample_direction;
-                //float w_bsdf;
+                BxDFSample sample = bsdf->sample(sampler, ray.d*(-1.0), intersection);
 
-                float p = bsdf->sample(sampler, ray.d*(-1.0), intersection, &sample_direction);
+                Vec3 sample_direction = sample.wi;
+                float p = sample.pdf;
 
                 if(!bsdf->non_zero(intersection,ray.d*(-1.0),sample_direction)){
                     break;

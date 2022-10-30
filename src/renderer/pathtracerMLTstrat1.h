@@ -55,37 +55,12 @@ class PathtracerMLT : public Renderer{
                 }
                 sampled_delta = false;
 
+                BxDFSample sample = bsdf->sample(sampler, ray.d*(-1.0), intersection);
 
-//               if(bsdf->is_emitter()){
+                Vec3 sample_direction = sample.wi;
+                float p = sample.pdf;
 
-
-                /*don't compute emission*/
-                    //compute MIS weights
-                    //float p_bsdf_nee  = scene.lights.pdf(intersection, prev_intersection)*(r*r)/bsdf_cos;
-                    //float p_bsdf_bsdf = p;
-                    //float w_bsdf = p_bsdf_bsdf/(p_bsdf_nee + p_bsdf_bsdf);
-                    //col =  col + mul* bsdf->emit(ray.d*(-1.0),intersection);
-//                }
-
-
-
-                Vec3 sample_direction;
-                //float w_bsdf;
-
-                float p = bsdf->sample(sampler, ray.d*(-1.0), intersection, &sample_direction);
-
-                //if sample is not valid, full absorption
-
-                //note: p does not include the cosine term
-
-                //float bsdf_cos = fabs(dot(ray.d,intersection.normal));
-                //float r = (intersection.hitpoint - ray.o).length();
-
-
-
-
-                /* NEE */
-                if(!bsdf->is_delta()){
+                if(!sample.delta){
                     LightSample light_sample = scene.light->connect_eye_path(sampler, intersection);
                     Vec3 s_dir = (light_sample.position-intersection.hitpoint);
                     float len = length(s_dir);
@@ -98,10 +73,6 @@ class PathtracerMLT : public Renderer{
 
                     if(bsdf->non_zero(intersection,ray.d*(-1.0),shadow_ray.d)){
                     if(!scene.primitive->intersect_any(shadow_ray)){
-                        //float cosine_term = 1.0;
-                        //if(!light_sample.ref->is_delta())
-                        //    float cosine_term = fabs(dot(light_sample.normal,shadow_ray.d));
-                       /*TODO:why doesn't the cosine term here work?*/
                         float r = len;
                         Vec3 factor = mul*bsdf->eval(
                             ray.d*(-1.0),
@@ -115,12 +86,6 @@ class PathtracerMLT : public Renderer{
                 } else {
                     sampled_delta = true;
                 }
-                /* MIS */
-
-                //float p_nee_bsdf = bsdf->pdf(intersection, light_sample);
-                //float p_nee_nee = light_sample.p*r*r/some_cosine;
-
-                //float w_bsdf = p_nee_nee/(p_nee_bsdf + p_nee_nee);
 
                 if(!bsdf->non_zero(intersection,ray.d*(-1.0),sample_direction)){
                     break;
@@ -138,10 +103,8 @@ class PathtracerMLT : public Renderer{
                 }
 
                 mul = mul*eval/p;
-                //if(!sampled_delta)
-                    ray = Ray(intersection.hitpoint+sample_direction*EPS, sample_direction);
-                //else
-                  //  ray = Ray(intersection.hitpoint+ray.d*EPS, ray.d);
+                ray = Ray(intersection.hitpoint+sample_direction*EPS, sample_direction);
+
                 prev_intersection = intersection;
             }
         }

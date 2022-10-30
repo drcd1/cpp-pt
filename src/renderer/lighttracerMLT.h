@@ -95,15 +95,16 @@ class LighttracerMLT: public Renderer{
             } else {
                 auto bsdf = intersection.get_bxdf();
 
-                Vec3 sample_direction;
+                BxDFSample sample = bsdf->sample(sampler, ray.d*(-1.0), intersection);
 
-                float p = bsdf->sample(sampler, ray.d*(-1.0), intersection, &sample_direction);
+                Vec3 sample_direction = sample.wi;
+                float p = sample.pdf;
                 Vec3 eval = bsdf->eval(ray.d*(-1.0), sample_direction, intersection)*
                             fabs(dot(ray.d,intersection.normal)/dot(ray.d,intersection.g_normal));
 
 
                 /* Connect to camera */
-                if(!bsdf->is_delta()){
+                if(!sample.delta){
                     CameraConnection cc = scene.camera->connect_light_path(sampler, intersection);
 
                     Ray shadow_ray(intersection.hitpoint,
