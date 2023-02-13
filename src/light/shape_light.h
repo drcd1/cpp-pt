@@ -53,7 +53,7 @@ public:
         lps.position = it.hitpoint;
         lps.radiance =  bxdf->emit(
             normalized(lps.direction),
-            it);
+            it)*fabs(dot(it.normal,lps.direction));
 
         lps.pdf = (1.0/primitive->get_shape()->area())*p;
         return lps;

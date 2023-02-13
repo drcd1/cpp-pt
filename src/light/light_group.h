@@ -34,7 +34,7 @@ public:
         int sampled = int(s.sample()*lights.size())%lights.size();
 
         LightPathStart lps = lights.at(sampled)->sample(s);
-        lps.radiance = lps.radiance*lights.size();
+        lps.radiance = lps.radiance;
         lps.pdf *= 1.0/float(lights.size());
         return lps;
     }

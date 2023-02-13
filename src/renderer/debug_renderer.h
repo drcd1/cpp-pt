@@ -35,7 +35,7 @@ class DebugRenderer : public Renderer{
 
 public:
 
-    void render(Scene& sc, std::string filename) const {
+    void render(Scene& sc, std::string filename) {
         RgbImage* image= &(sc.camera->get_image());
         Vec2i res = image->res;
 

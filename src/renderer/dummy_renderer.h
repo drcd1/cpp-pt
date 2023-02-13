@@ -12,7 +12,7 @@
 namespace cpppt{
 class DummyRenderer{
 public:
-    void render(Scene& sc, std::string filename) const {
+    void render(Scene& sc, std::string filename) {
         RgbImage* image= &(sc.camera->get_image());
         Vec2i res = image->res;
         for(int i = 0; i<res.x; i++){

@@ -70,7 +70,7 @@ class PathtracerMIS : public Renderer{
 
 
 
-                BxDFSample sample = bsdf->sample(sampler, ray.d*(-1.0), intersection);
+                DirectionalSample sample = bsdf->sample(sampler, ray.d*(-1.0), intersection);
 
                 Vec3 sample_direction = sample.wi;
                 p = sample.pdf;
@@ -132,7 +132,7 @@ class PathtracerMIS : public Renderer{
 public:
     PathtracerMIS(const RenderSettings& rs): samples(rs.spp) {}
 
-    void render(Scene& sc, std::string filename) const {
+    void render(Scene& sc, std::string filename) {
         RgbImage* image= &(sc.camera->get_image());
         Vec2i res = image->res;
 

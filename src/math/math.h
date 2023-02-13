@@ -741,6 +741,14 @@ inline Vec3 reflect(const Vec3& wo, const Vec3& wh){
     return normalized(wo*(-1.0) + wh*dot(wh,wo)*2.0);
 }
 
+struct DirectionalSample{
+    Vec3 wi;
+    float pdf;
+    bool delta;
+    DirectionalSample() = default;
+    DirectionalSample(const Vec3& wi, float pdf, bool delta): wi(wi),pdf(pdf),delta(delta){}
+};
+
 
 }
 #endif

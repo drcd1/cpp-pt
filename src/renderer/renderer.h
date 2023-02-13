@@ -14,7 +14,9 @@ struct RenderSettings{
                         LIGHTTRACER, DEBUG,
                         PATHTRACER_MLT,
                         LIGHTTRACER_MLT,
+                        PHOTONMAPPING,
                         PURE_PT,
+                        PPG,
                         VALIDATION};
 
     RendererType renderer = RendererType::DEBUG;
@@ -27,7 +29,7 @@ struct RenderSettings{
 
 class Renderer{
 public:
-    virtual void render(Scene& sc, std::string filename) const = 0;
+    virtual void render(Scene& sc, std::string filename) = 0;
 };
 }
 

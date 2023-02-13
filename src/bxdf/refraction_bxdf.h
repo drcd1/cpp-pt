@@ -8,7 +8,11 @@
 #include <math/math.h>
 
 namespace cpppt{
+/*
+Vec3 compute_normal(const Vec3& wo, const Vec3& wi,float ior){
 
+}
+*/
 
 class RefractionBxDF: public BxDF{
 
@@ -19,7 +23,7 @@ class RefractionBxDF: public BxDF{
         Vec3 eval(const Vec3& wo, const Vec3& wi,const Intersection& it) {
             return Vec3(1.0,1.0,1.0);
         }
-        BxDFSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) {
+        DirectionalSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) {
             //Vec3 n = correct_normal(it.normal, wo);
 
             Vec3 n = it.normal;
@@ -44,7 +48,7 @@ class RefractionBxDF: public BxDF{
             }
             Vec3 sample_direction = r;
             //*sample_direction = normalized(wo*(-1.0));
-            return BxDFSample(sample_direction,1.0,true);
+            return DirectionalSample(sample_direction,1.0,true);
         }
 
         float pdf(const Vec3& wo, const Vec3& wi,const Intersection& it) {

@@ -1,23 +1,23 @@
 #ifndef CPPPT_BXDF
 #define CPPPT_BXDF
+#ifndef _DEBUG
+#define _DEBUG
+#endif
 
 #include <math/math.h>
 #include <math/sampler.h>
 #include <shape/intersection.h>
 namespace cpppt{
 
-struct BxDFSample{
-    Vec3 wi;
-    float pdf;
-    bool delta;
-
-    BxDFSample(const Vec3& wi, float pdf, bool delta): wi(wi),pdf(pdf),delta(delta){}
-};
 
 class BxDF{
     public:
+
+        #ifdef _DEBUG
+        std::string name = "Abstract BxDF";
+        #endif
         virtual Vec3 eval(const Vec3& wo, const Vec3& wi,const Intersection& it) = 0;
-        virtual BxDFSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) = 0;
+        virtual DirectionalSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) = 0;
         virtual float pdf(const Vec3& wo, const Vec3& wi,const Intersection& it) = 0;
         virtual Vec3 emit(const Vec3& wo, const Intersection& it) = 0;
         virtual bool is_emitter(){return false;}

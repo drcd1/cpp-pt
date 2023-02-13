@@ -48,13 +48,22 @@ public:
 
         Vec3 dir = coords.transpose()*(it.hitpoint-cc.pos);
         float n_d_l = length(dir);
-        Vec3 n_dir = dir/n_d_l;
+        if(n_d_l<EPS || dir.z>=0){
+            cc.i=-1;
+            cc.j=-1;
+            return cc;
+        }
+        Vec3 n_dir = normalized(dir/n_d_l);
         dir = dir/dir.z * -1.0;
         dir.x =dir.x/(tan_fovy*aspect_ratio);
         dir.y = dir.y/tan_fovy;
         cc.i = int((dir.x*0.5 + 0.5)*image.res.x);
         cc.j = int((dir.y*0.5 + 0.5)*image.res.y);
-        //todo: fix -1
+        if((dir.x*0.5 + 0.5)*image.res.x<0.0 || (dir.y*0.5 + 0.5)*image.res.y<0.0){
+            cc.i = -1;
+            cc.j = -1;
+            return cc;
+        }
 
         cc.j =  image.res.y - cc.j -1;
         if(cc.i>=image.res.x || cc.j >= image.res.y || cc.j<0 || cc.i<0){
@@ -62,7 +71,10 @@ public:
             cc.j = -1;
         }
         //todo: account for x
-        cc.factor = 1.0/(n_dir.z*n_dir.z *n_d_l*n_d_l *tan_fovy* tan_fovy);
+        //TODO: double check cosine
+        Vec3 forwards = coords*Vec3(0.0,0.0,1.0);
+
+        cc.factor = /*std::fabs(dot(it.normal,forwards))/*/1.0/(std::fabs(n_dir.z*n_dir.z*n_dir.z) *n_d_l*n_d_l *tan_fovy* tan_fovy);
 
         return cc;
 

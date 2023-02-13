@@ -43,7 +43,7 @@ class PurePt : public Renderer{
                     break;
                 }
 
-                BxDFSample sample = bsdf->sample(sampler, ray.d*(-1.0), intersection);
+                DirectionalSample sample = bsdf->sample(sampler, ray.d*(-1.0), intersection);
 
                 Vec3 sample_direction = sample.wi;
                 float p = sample.pdf;
@@ -73,7 +73,7 @@ class PurePt : public Renderer{
 public:
     PurePt(const RenderSettings& rs): samples(rs.spp) {}
 
-    void render(Scene& sc, std::string filename) const {
+    void render(Scene& sc, std::string filename) {
         RgbImage* image= &(sc.camera->get_image());
         Vec2i res = image->res;
 

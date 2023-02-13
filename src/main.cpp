@@ -6,7 +6,9 @@
 #include <renderer/pathtracerMLT.h>
 #include <renderer/pathtracerMIS.h>
 #include <renderer/lighttracerMLT.h>
+#include <renderer/photonmapping.h>
 #include <renderer/pure_pt.h>
+#include <renderer/ppg.h>
 #include <primitive/simple_group.h>
 #include <primitive/bvh.h>
 #include <shape/mesh.h>
@@ -18,6 +20,7 @@
 #include <bxdf/mirror_bxdf.h>
 #include <bxdf/refraction_bxdf.h>
 #include <time.h>
+#include <algorithms/sdtree.h>
 
 #include <light/light.h>
 #include <light/point_light.h>
@@ -33,7 +36,19 @@
 //but i need to check if this only happens for invalid samples
 // if so, why nans?
 using namespace cpppt;
+/*
+void runDTreeTest(){
 
+    Bounds<Vec3> bounds;
+    bounds.min = Vec3(0.0);
+    bounds.max = Vec3(1.0);
+    SDTree sdt(bounds);
+
+    sdt.splat(0.0)
+
+
+}
+*/
 void runValidation(){
     Intersection it;
     it.normal = Vec3(0,0,1);
@@ -58,7 +73,7 @@ void runValidation(){
     Vec3 eye = normalized(Vec3(-1.0,1.0,0.3));
 
     RandomSampler s(time(NULL));
-    BxDFSample sample = bxdf->sample(s,eye,it);
+    DirectionalSample sample = bxdf->sample(s,eye,it);
     Vec3 light = sample.wi;
     float p = sample.pdf;
 
@@ -98,8 +113,12 @@ int main(int argc, char** argv){
         renderer = std::make_unique<PathtracerMLT>(rs);
     } else if(rs.renderer == RenderSettings::RendererType::LIGHTTRACER_MLT){
         renderer = std::make_unique<LighttracerMLT>(rs);
+    } else if(rs.renderer == RenderSettings::RendererType::PHOTONMAPPING){
+        renderer = std::make_unique<PhotonMapping>(rs);
     } else if(rs.renderer == RenderSettings::RendererType::PURE_PT){
         renderer = std::make_unique<PurePt>(rs);
+    }else if(rs.renderer == RenderSettings::RendererType::PPG){
+        renderer = std::make_unique<PPG>(rs);
     }else if(rs.renderer == RenderSettings::RendererType::VALIDATION){
         runValidation();
         return 0;

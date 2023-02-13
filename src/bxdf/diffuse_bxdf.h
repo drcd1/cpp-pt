@@ -11,16 +11,21 @@ namespace cpppt{
 
 
 class DiffuseBxDF: public BxDF{
+
     private:
         Vec3 col;
     public:
 
-        DiffuseBxDF(Vec3 col):col(col){}
+        DiffuseBxDF(Vec3 col):col(col){
+            #ifdef _DEBUG
+            name = "DiffuseBxDF";
+            #endif
+        }
 
         Vec3 eval(const Vec3& wo, const Vec3& wi, const Intersection& it) {
             return col*fabs((dot(it.normal, wi)))/M_PI;
         }
-        BxDFSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) {
+        DirectionalSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) {
             float r1 = sampler.sample();
             float r2 = sampler.sample();
             Vec3 sample = sample_hemisphere_cos(r1, r2);
@@ -32,7 +37,7 @@ class DiffuseBxDF: public BxDF{
             orthogonal(n,&x,&y,&z);
             Mat3 coords(y,z,x);
             Vec3 sample_direction = coords*sample;
-            return BxDFSample(sample_direction,p,false);
+            return DirectionalSample(sample_direction,p,false);
 
         };
         Vec3 emit(const Vec3& wo, const Intersection& it) {

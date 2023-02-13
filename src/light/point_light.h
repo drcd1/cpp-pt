@@ -21,13 +21,12 @@ public:
         ls.normal = Vec3(1.0,0.0,0.0);
         ls.ref = this;
         return ls;
-        /*TODO: divide by 4pi??*/
     }
 
     LightPathStart sample(Sampler& s) const {
         LightPathStart lps;
         lps.pdf = 1.0/(4.0*M_PI);
-        lps.radiance = color->sample(Vec3(0.0))*intensity; //TODO: divide 4pi?
+        lps.radiance = color->sample(Vec3(0.0))*intensity/(4.0*M_PI); //TODO: divide 4pi?
         lps.position = position;
         lps.direction = sample_sphere(s.sample(),s.sample());
         return lps;

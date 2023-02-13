@@ -150,7 +150,18 @@ public:
     }
 
     float   pdf(const Vec3& wo, const Vec3& wh) const {
-        return d(wh) * g1(wo) * fabs(dot(wo, wh)) / fabs(cosTheta(wo));
+
+        float ad = d(wh);
+        float ag1 = g1(wo);
+        float adot = fabs(dot(wo, wh));
+        float aother_dot = fabs(cosTheta(wo));
+        float ret = ad * ag1 * adot / aother_dot;
+        if(std::isnan(ret)){
+            std::cout<<"Yet another nan"<<std::endl;
+        }
+
+
+        return ret;
     }
 
 };

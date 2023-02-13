@@ -273,6 +273,8 @@ namespace Loader{
                     rs->renderer = RenderSettings::RendererType::DEBUG;
                 } else if(rtype=="lighttracer"){
                     rs->renderer = RenderSettings::RendererType::LIGHTTRACER;
+                } else if(rtype=="pure_pt"){
+                    rs->renderer = RenderSettings::RendererType::PURE_PT;
                 } else if(rtype=="pathtracer"){
                     rs->renderer = RenderSettings::RendererType::PATHTRACER;
                 } else if(rtype=="pathtracer_mis"){
@@ -281,8 +283,10 @@ namespace Loader{
                     rs->renderer = RenderSettings::RendererType::PATHTRACER_MLT;
                 }else if(rtype=="lighttracer_mlt"){
                     rs->renderer = RenderSettings::RendererType::LIGHTTRACER_MLT;
-                }else if(rtype=="pure_pt"){
-                    rs->renderer = RenderSettings::RendererType::PURE_PT;
+                }else if(rtype=="photonmapping"){
+                    rs->renderer = RenderSettings::RendererType::PHOTONMAPPING;
+                }else if(rtype=="ppg"){
+                    rs->renderer = RenderSettings::RendererType::PPG;
                 }else if(rtype=="validation"){
                     rs->renderer = RenderSettings::RendererType::VALIDATION;
                 }else {

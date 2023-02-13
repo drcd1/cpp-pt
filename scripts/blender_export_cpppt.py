@@ -12,8 +12,8 @@ import shutil
 # each mesh has only one material
 # modifiers applied
     
-path = 'D:/cpp-pt/scenes/scene_1/'
-filename = "scene_1"
+path = 'D:/cpp-pt/scenes/scene_pt_lt/'
+filename = "scene"
 
 def save_tex(node):
     print("saving_tex:",node)

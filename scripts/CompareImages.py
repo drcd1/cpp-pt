@@ -1,8 +1,9 @@
 from skimage.metrics import structural_similarity as ssim
 import matplotlib.pyplot as plt
 import numpy as np
-import cv2
+import imageio
 import sys
+
 def mse(imageA, imageB):
 	# the 'Mean Squared Error' between the two images is the
 	# sum of the squared difference between the two images;
@@ -14,6 +15,7 @@ def mse(imageA, imageB):
 	# the two images are
 	return err
 def compare_images(imageA, imageB):
+    imageA = imageA/1.2
     # compute the mean squared error and structural similarity
     # index for the images
     m = mse(imageA, imageB)
@@ -24,11 +26,11 @@ def compare_images(imageA, imageB):
     plt.suptitle("MSE: %.2f" % (m))#, SSIM: %.2f" % (m, s))
     # show first image
     ax = fig.add_subplot(2, 2, 1)
-    plt.imshow(imageA, vmin=0,vmax=255,cmap = plt.cm.gray)
+    plt.imshow(imageA, vmin=0,vmax=1,cmap = plt.cm.gray)
     plt.axis("off")
     # show the second image
     ax = fig.add_subplot(2, 2, 2)
-    plt.imshow(imageB,  vmin=0,vmax=255,cmap = plt.cm.gray)
+    plt.imshow(imageB,  vmin=0,vmax=1,cmap = plt.cm.gray)
     plt.axis("off")
 
     ax = fig.add_subplot(2, 2, 3)
@@ -37,8 +39,8 @@ def compare_images(imageA, imageB):
     plt.axis("off")
 
     ax = fig.add_subplot(2, 2, 4)
-    help = abs(imageA/imageB);
-    plt.imshow(help, cmap = plt.cm.plasma)
+    help = ((imageA-imageB)/(imageB+0.001));
+    plt.imshow(help, vmin=-0.1,vmax=0.1, cmap = plt.cm.plasma)
     plt.axis("off")
 
 
@@ -48,11 +50,10 @@ def compare_images(imageA, imageB):
 if(len(sys.argv) < 3):
     print("Please use the filenames as args")
 
-im1 = cv2.imread(sys.argv[1])
-im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
+im1 = imageio.imread(sys.argv[1])
+im1 = im1.sum(2)*0.3333
 
-
-im2 = cv2.imread(sys.argv[2])
-im2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
+im2 = imageio.imread(sys.argv[2])
+im2 = im2.sum(2)*0.3333
 
 compare_images(im1,im2)

@@ -30,8 +30,8 @@ class Lighttracer : public Renderer{
 
         Intersection intersection;
         Intersection prev_intersection;
-        Vec3 col = lps.radiance;
-        Vec3 mul = lps.radiance;
+
+        Vec3 mul = lps.radiance/lps.pdf;
         bool sampled_delta = false;
 
         RgbImage& image = scene.camera->get_image();
@@ -46,13 +46,12 @@ class Lighttracer : public Renderer{
                     break;
                 }
 
-                BxDFSample sample = bsdf->sample(sampler, ray.d*(-1.0), intersection);
+                DirectionalSample sample = bsdf->sample(sampler, ray.d*(-1.0), intersection);
 
                 Vec3 sample_direction = sample.wi;
                 float p = sample.pdf;
 
-                Vec3 eval = bsdf->eval(ray.d*(-1.0), sample_direction, intersection)*
-                            fabs(dot(ray.d,intersection.normal)/dot(ray.d,intersection.g_normal));
+                Vec3 eval = bsdf->eval(ray.d*(-1.0), sample_direction, intersection);
 
 
                 /* Connect to camera */
@@ -66,26 +65,25 @@ class Lighttracer : public Renderer{
                     if(bsdf->non_zero(intersection,ray.d*(-1.0),shadow_ray.d) && cc.i >-1){
                     if(!scene.primitive->intersect_any(shadow_ray)){
                         Vec3 color =  mul*bsdf->eval(
-                            ray.d*(-1.0),
-                            shadow_ray.d,
+                            normalized(ray.d*(-1.0)),
+                            normalized(shadow_ray.d),
                             intersection
-                        ) * factor *
-                            fabs(dot(ray.d,intersection.normal)/dot(ray.d,intersection.g_normal));
+                        ) * factor;
 
-                        //color = color/ dot(shadow_ray.d, intersection.normal);
-                        color = color*cc.factor;
+                        color = color*cc.factor*M_PI/4.0;//(0.120/0.154);
 
                         Vec3* px = image.get_pixel(cc.i,cc.j);
                         //*px = Vec3(1.0,0.0,1.0);
 
 
 
-                        #pragma omp atomic
+                //        #pragma omp atomic
                         (*px).x += color.x;
 
-                        #pragma omp atomic
+                //        #pragma omp atomic
                         (*px).y += color.y;
-                        #pragma omp atomic
+
+                 //       #pragma omp atomic
                         (*px).z += color.z;
 
 
@@ -118,11 +116,11 @@ class Lighttracer : public Renderer{
 public:
     Lighttracer(const RenderSettings& rs): samples(rs.spp) {}
 
-    void render(Scene& sc, std::string filename) const {
+    void render(Scene& sc, std::string filename) {
         RgbImage* image= &(sc.camera->get_image());
         Vec2i res = image->res;
 
-        #pragma omp parallel for
+       // #pragma omp parallel for
         for(int i = 0; i<res.x; i++){
 
 
