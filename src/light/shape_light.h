@@ -4,6 +4,13 @@
 #include <light/light.h>
 #include <primitive/primitive_leaf.h>
 
+
+/*
+For area lights
+intensity is irradiance (power/area)
+
+*/
+
 namespace cpppt{
 class ShapeLight: public Light {
 private:

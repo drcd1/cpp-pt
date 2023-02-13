@@ -74,7 +74,8 @@ public:
         //TODO: double check cosine
         Vec3 forwards = coords*Vec3(0.0,0.0,1.0);
 
-        cc.factor = /*std::fabs(dot(it.normal,forwards))/*/1.0/(std::fabs(n_dir.z*n_dir.z*n_dir.z) *n_d_l*n_d_l *tan_fovy* tan_fovy);
+        //CAMERA PLANE GOES -1 TO 1, SO AREA FACTOR IS 1/4
+        cc.factor = /*std::fabs(dot(it.normal,forwards))/*/1.0/(4.0*std::fabs(n_dir.z*n_dir.z*n_dir.z) *n_d_l*n_d_l *tan_fovy* tan_fovy);
 
         return cc;
 

@@ -39,7 +39,6 @@ class EmissiveBxDF: public BxDF{
             float r2 = sampler.sample();
             Vec3 sample = sample_hemisphere_cos(r1, r2);
             float p = 0.5*sample.z/M_PI;
-
             //TODO: double normals?
 
             float r = sampler.sample();

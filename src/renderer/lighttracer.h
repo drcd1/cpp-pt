@@ -70,7 +70,7 @@ class Lighttracer : public Renderer{
                             intersection
                         ) * factor;
 
-                        color = color*cc.factor*M_PI/4.0;//(0.120/0.154);
+                        color = color*cc.factor;//(0.120/0.154);
 
                         Vec3* px = image.get_pixel(cc.i,cc.j);
                         //*px = Vec3(1.0,0.0,1.0);

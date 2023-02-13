@@ -10,6 +10,10 @@ private:
     std::shared_ptr<Texture> color;
     float intensity;
 
+
+/*
+For point lights, intensity corresponds to total power.
+*/
 public:
     PointLight(Vec3 position, std::shared_ptr<Texture> color, float intensity): position(position),color(color),intensity(intensity){}
     //for NEE
@@ -25,7 +29,7 @@ public:
 
     LightPathStart sample(Sampler& s) const {
         LightPathStart lps;
-        lps.pdf = 1.0/(4.0*M_PI);
+        lps.pdf = 1.0/(4.0*M_PI*M_PI);
         lps.radiance = color->sample(Vec3(0.0))*intensity/(4.0*M_PI); //TODO: divide 4pi?
         lps.position = position;
         lps.direction = sample_sphere(s.sample(),s.sample());

@@ -70,7 +70,7 @@ class PhotonMapping : public Renderer{
 
             }
         }
-        return col*M_PI;
+        return col;
     }
 
     void emit_light_path(const Scene& scene, Sampler& sampler, float factor) {
