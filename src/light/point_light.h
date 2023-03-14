@@ -24,12 +24,16 @@ public:
         ls.intensity = color->sample(Vec3(0.0))*intensity/(4.0*M_PI);
         ls.normal = Vec3(1.0,0.0,0.0);
         ls.ref = this;
+        ls.delta = true;
+        ls.infinite = false;
         return ls;
     }
 
     LightPathStart sample(Sampler& s) const {
         LightPathStart lps;
         lps.pdf = 1.0/(4.0*M_PI*M_PI);
+        lps.angle_pdf = lps.pdf;
+        lps.area_pdf = 1.0;
         lps.radiance = color->sample(Vec3(0.0))*intensity/(4.0*M_PI); //TODO: divide 4pi?
         lps.position = position;
         lps.direction = sample_sphere(s.sample(),s.sample());

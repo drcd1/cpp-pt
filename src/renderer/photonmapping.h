@@ -201,6 +201,9 @@ public:
 
 
     }
+    static const char* name(){
+        return "Photonmapping";
+    }
 
 };
 }

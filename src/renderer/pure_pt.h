@@ -16,8 +16,13 @@ namespace cpppt{
 class PurePt : public Renderer{
     int samples;
 
-    Vec3 render_sky(const Ray& r) const {
-        return Vec3(.0);
+
+    Vec3 render_sky(const Ray& r, const Scene& s) const {
+        if(s.light->is_infinite_not_delta()){
+            return s.light->emit(r.d);
+        } else {
+            return Vec3(.0);
+        }
     }
 
     static float russian_roulette(const Vec3& col){
@@ -34,7 +39,7 @@ class PurePt : public Renderer{
         for(int i = 0; i<32; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
             if(!intersected){
-                col = col + mul*render_sky(ray);
+                col = col + mul*render_sky(ray,scene);
                 break;
             } else {
                 auto bsdf = intersection.get_bxdf();
@@ -105,6 +110,10 @@ public:
 
 
         image->save(filename);
+    }
+
+    static const char* name(){
+        return "Naive Pathtracing";
     }
 };
 }

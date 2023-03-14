@@ -258,6 +258,9 @@ public:
 
         image->save(filename);
     }
+    static const char* name(){
+        return "PathttracerMLTStrat1";
+    }
 };
 }
 #endif

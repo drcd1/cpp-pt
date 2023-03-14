@@ -21,8 +21,12 @@ class PPG : public Renderer{
 
     SDTree* st;
 
-    Vec3 render_sky(const Ray& r) const {
-        return Vec3(.0);
+    Vec3 render_sky(const Ray& r, const Scene& s) const {
+        if(s.light->is_infinite_not_delta()){
+            return s.light->emit(r.d);
+        } else {
+            return Vec3(.0);
+        }
     }
 
     static float russian_roulette(const Vec3& col){
@@ -55,7 +59,7 @@ class PPG : public Renderer{
                 vertices.back().radiance = Vec3(1.0);
             }
             if(!intersected){
-                Vec3 rad = render_sky(ray);
+                Vec3 rad = render_sky(ray,scene);
                 col = col + mul*rad;
                 if(i>0){
                     vertices.back().radiance = rad;
@@ -80,10 +84,12 @@ class PPG : public Renderer{
                         std::cout<<"nan";
                     }
                 } else {
-
-
-
                     sample = st->sample(sampler, intersection.hitpoint);
+
+                    float pdf = st->pdf(intersection.hitpoint,sample.wi);
+                    if(sample.pdf/pdf> 1.01 || sample.pdf/pdf < 0.99){
+                        std::cout<<pdf<<" AAND "<<sample.pdf<<std::endl;
+                    }
                     if(!bsdf->non_zero(intersection,ray.d*(-1.0),sample.wi)){
                         break;
                     }
@@ -153,18 +159,21 @@ public:
         int total_samples = samples*samples;
         std::vector<int> sample_vector;
         int spp = 1;
+        int total_samples_are = 0;
         while(true){
+            total_samples_are+=spp;
             sample_vector.push_back(spp);
             spp*=2;
             if(spp>=total_samples){
                 break;
             }
         }
+        std::cout<<"Total Samples: "<<total_samples_are<<std::endl;
 
         for(int l=0; l<sample_vector.size(); l++){
             std::ostringstream oss;
             oss<<l;
-            st->debug_log("iteration_"+oss.str());
+            //st->debug_log("iteration_"+oss.str());
             if(l==sample_vector.size()-1){
                 st->no_learning();
             }
@@ -187,8 +196,8 @@ public:
 
                     }
                     acc = acc/(float(spp));
-                    if(l==sample_vector.size()-1)
-                        image->put_pixel(i,j,acc);
+                    //if(l==sample_vector.size()-1)
+                    image->put_pixel(i,j,acc);
 
                 }
             }
@@ -205,12 +214,16 @@ public:
                     }
                 }
             }*/
+
+            image->save(filename);
             st->update();
         }
 
         delete st;
 
-        image->save(filename);
+    }
+    static const char* name(){
+        return "PPG";
     }
 };
 }

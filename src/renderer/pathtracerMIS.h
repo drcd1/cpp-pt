@@ -17,8 +17,18 @@ namespace cpppt{
 class PathtracerMIS : public Renderer{
     int samples;
 
-    Vec3 render_sky(const Ray& r) const {
-        return Vec3(.0);
+    #ifndef NO_GUI
+    std::vector<int> counter;
+    int total_pixels;
+    int current_pixels;
+    #endif
+
+     Vec3 render_sky(const Ray& r, const Scene& s) const {
+        if(s.light->is_infinite_not_delta()){
+            return s.light->emit(r.d);
+        } else {
+            return Vec3(.0);
+        }
     }
 
     static float russian_roulette(const Vec3& col){
@@ -36,7 +46,15 @@ class PathtracerMIS : public Renderer{
         for(int i = 0; i<32; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
             if(!intersected){
-                col = col + mul*render_sky(ray);
+                Vec3 ret = render_sky(ray,scene);
+                float p_bsdf_bsdf = p;
+                float p_bsdf_nee = scene.light->pdf(-1,scene.light.get(), ray.d,ray.o);
+                float mis = p_bsdf_bsdf/(p_bsdf_nee+p_bsdf_bsdf);
+                //TODO: NO MIS WEIGHT IF i = 0
+                if(i==0){
+                    mis = 1.0;
+                }
+                col = col + mul*ret*mis;
                 break;
             } else {
                 auto bsdf = intersection.get_bxdf();
@@ -50,6 +68,7 @@ class PathtracerMIS : public Renderer{
                         Vec3 rad = bsdf->emit(ray.d*(-1.0),intersection);
 
                         col = col + mul*rad;
+
                     } else {
                         float p_bsdf_bsdf = p;
 
@@ -82,6 +101,9 @@ class PathtracerMIS : public Renderer{
                     Vec3 s_dir = (light_sample.position-intersection.hitpoint);
                     float len = length(s_dir);
                     s_dir = s_dir/len;
+                    if(light_sample.infinite){
+                        len = 10e6;
+                    }
 
                     Ray shadow_ray(intersection.hitpoint + s_dir*EPS,
                             s_dir,
@@ -91,6 +113,9 @@ class PathtracerMIS : public Renderer{
                     if(bsdf->non_zero(intersection,ray.d*(-1.0),shadow_ray.d)){
                     if(!scene.primitive->intersect_any(shadow_ray)){
                         float r = len;
+                        if(light_sample.infinite){
+                            r = 1.0;
+                        }
                         float p_nee_bsdf = bsdf->pdf(ray.d*(-1.0),s_dir,intersection);
                         float cosine_term = fabs(dot(light_sample.normal,s_dir))+EPS;
                         float p_nee_nee = light_sample.pdf*r*r/cosine_term;
@@ -130,19 +155,50 @@ class PathtracerMIS : public Renderer{
     }
 
 public:
+
+#ifndef NO_GUI
+    void updateProgress(RenderProgress& progress) override{
+        total_pixels = std::max(total_pixels,1);
+        progress.percentage = float(current_pixels)/total_pixels;
+        //progress.percentage= 0.3;
+        progress.current_task = 1;
+        progress.total_tasks = 1;
+        sprintf(progress.task_description,"Rendering");
+    }
+#endif
+
     PathtracerMIS(const RenderSettings& rs): samples(rs.spp) {}
 
     void render(Scene& sc, std::string filename) {
         RgbImage* image= &(sc.camera->get_image());
         Vec2i res = image->res;
 
+        #ifndef NO_GUI
+        int counter_size = omp_get_max_threads();
+        counter.resize(counter_size);
+        total_pixels = res.x*res.y;
+        #endif
+
         #pragma omp parallel for
         for(int i = 0; i<res.x; i++){
+            counter.at(omp_get_thread_num()) += res.y;
 
 
             RandomSampler s(i);
-            if(i%50==0)
-                std::cout<<"rendering line "<<i<<std::endl;
+
+            #ifndef NO_GUI
+
+            if(omp_get_thread_num()==0){
+                int tmp = 0;
+                for(int k = 0; k<counter_size; k++){
+                    tmp+=counter.at(k);
+                }
+                current_pixels = tmp;
+            }
+            #endif
+
+            //if(i%50==0)
+            //    std::cout<<"rendering line "<<i<<std::endl;
             for(int j = 0; j<res.y; j++){
                 Vec3 acc(0.0);
                 for(int k = 0; k<samples; k++){
@@ -161,9 +217,10 @@ public:
 
             }
         }
-
-
         image->save(filename);
+    }
+    static const char* name(){
+        return "PathtracerMIS";
     }
 };
 }

@@ -29,7 +29,7 @@ public:
         ls.position = it.hitpoint;
         ls.intensity = primitive->get_material()->get_bxdf(it.texture_coords)->emit(
             normalized(from.hitpoint - ls.position),
-            it)*fabs(dot(it.normal, normalized(from.hitpoint - ls.position)));
+            it)*fabs(dot(it.g_normal, normalized(from.hitpoint - ls.position)));
 
         //ls.intensity = fabs(dot(it.normal, normalized(from.hitpoint - ls.position)))*8.0;
 
@@ -40,7 +40,6 @@ public:
         ls.ref = this;
         return ls;
 
-        /*TODO: divide by 2pi ??*/
     }
 
     float pdf(int l_id, const Light* parent, const Vec3& coords, const Vec3& lit) const {
@@ -63,6 +62,8 @@ public:
             it)*fabs(dot(it.normal,lps.direction));
 
         lps.pdf = (1.0/primitive->get_shape()->area())*p;
+        lps.angle_pdf = p;
+        lps.area_pdf = (1.0/primitive->get_shape()->area());
         return lps;
 
     }

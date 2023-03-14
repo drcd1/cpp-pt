@@ -34,6 +34,12 @@ class DebugRenderer : public Renderer{
     }
 
 public:
+    static const char* name(){
+        return "debug";
+    }
+
+
+    DebugRenderer(const RenderSettings& rs) {}
 
     void render(Scene& sc, std::string filename) {
         RgbImage* image= &(sc.camera->get_image());

@@ -279,6 +279,9 @@ public:
 
         image->save(filename);
     }
+    static const char* name(){
+        return "LighttracerMLT";
+    }
 };
 }
 #endif

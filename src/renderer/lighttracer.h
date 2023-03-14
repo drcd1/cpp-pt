@@ -38,7 +38,6 @@ class Lighttracer : public Renderer{
         for(int i = 0; i<32; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
             if(!intersected){
-
                 break;
             } else {
                 auto bsdf = intersection.get_bxdf();
@@ -53,6 +52,8 @@ class Lighttracer : public Renderer{
 
                 Vec3 eval = bsdf->eval(ray.d*(-1.0), sample_direction, intersection);
 
+                float correcting_factor = fabs(dot(intersection.normal,ray.d))/fabs(dot(intersection.g_normal,ray.d));
+
 
                 /* Connect to camera */
                 if(!sample.delta){
@@ -64,11 +65,13 @@ class Lighttracer : public Renderer{
 
                     if(bsdf->non_zero(intersection,ray.d*(-1.0),shadow_ray.d) && cc.i >-1){
                     if(!scene.primitive->intersect_any(shadow_ray)){
+
+
                         Vec3 color =  mul*bsdf->eval(
                             normalized(ray.d*(-1.0)),
                             normalized(shadow_ray.d),
                             intersection
-                        ) * factor;
+                        ) * factor * correcting_factor * fabs(dot(intersection.g_normal,shadow_ray.d)) / fabs(dot(intersection.normal,shadow_ray.d));
 
                         color = color*cc.factor;//(0.120/0.154);
 
@@ -77,13 +80,13 @@ class Lighttracer : public Renderer{
 
 
 
-                //        #pragma omp atomic
+                        #pragma omp atomic
                         (*px).x += color.x;
 
-                //        #pragma omp atomic
+                        #pragma omp atomic
                         (*px).y += color.y;
 
-                 //       #pragma omp atomic
+                        #pragma omp atomic
                         (*px).z += color.z;
 
 
@@ -104,7 +107,7 @@ class Lighttracer : public Renderer{
                     p = p*rr;
                 }
 
-                mul = mul*eval/p;
+                mul = mul*eval/p* correcting_factor * fabs(dot(intersection.g_normal,sample.wi)) / fabs(dot(intersection.normal,sample.wi));
                 ray = Ray(intersection.hitpoint, sample_direction);
                 prev_intersection = intersection;
             }
@@ -120,7 +123,7 @@ public:
         RgbImage* image= &(sc.camera->get_image());
         Vec2i res = image->res;
 
-       // #pragma omp parallel for
+        #pragma omp parallel for
         for(int i = 0; i<res.x; i++){
 
 
@@ -152,6 +155,10 @@ public:
 
 
         image->save(filename);
+    }
+
+    static const char* name(){
+        return "Lighttracer";
     }
 };
 }

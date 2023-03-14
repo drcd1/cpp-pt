@@ -19,12 +19,16 @@ struct LightSample
     Vec3 position;
     Vec3 intensity;
     Vec3 normal;
+    bool delta;
+    bool infinite;
     const Light* ref;
 };
 
 struct LightPathStart
 {
     float pdf;
+    float area_pdf;
+    float angle_pdf;
     Vec3 position;
     Vec3 direction;
     Vec3 radiance;
@@ -48,6 +52,15 @@ public:
     }
     virtual float pdf(int l_id, const Light* parent, const Vec3& coords, const Vec3& lit) const {
         return 1.0;
+    }
+
+    //only for infinite non delta lights
+    virtual Vec3 emit(const Vec3& dir) const{
+        throw std::runtime_error("Not implemented");
+    }
+
+    virtual bool is_infinite_not_delta() const{
+        return false;
     }
 
     void set_group(int a_id, Light* a_parent){

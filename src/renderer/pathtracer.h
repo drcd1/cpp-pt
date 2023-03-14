@@ -15,8 +15,12 @@ namespace cpppt{
 class Pathtracer : public Renderer{
     int samples;
 
-    Vec3 render_sky(const Ray& r) const {
-        return Vec3(.0);
+    Vec3 render_sky(const Ray& r, const Scene& s) const {
+        if(s.light->is_infinite_not_delta()){
+            return s.light->emit(r.d);
+        } else {
+            return Vec3(.0);
+        }
     }
 
     static float russian_roulette(const Vec3& col){
@@ -34,7 +38,7 @@ class Pathtracer : public Renderer{
         for(int i = 0; i<32; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
             if(!intersected){
-                col = col + mul*render_sky(ray);
+                col = col + mul*render_sky(ray,scene)*float(sampled_delta);
                 break;
             } else {
                 auto bsdf = intersection.get_bxdf();
@@ -58,6 +62,10 @@ class Pathtracer : public Renderer{
                     float len = length(s_dir);
                     s_dir = s_dir/len;
 
+                    if(light_sample.infinite){
+                        len = 10e6;
+                    }
+
                     Ray shadow_ray(intersection.hitpoint + s_dir*EPS,
                             s_dir,
                             len-2.0*EPS);
@@ -66,6 +74,9 @@ class Pathtracer : public Renderer{
                     if(bsdf->non_zero(intersection,ray.d*(-1.0),shadow_ray.d)){
                     if(!scene.primitive->intersect_any(shadow_ray)){
                         float r = len;
+                        if(light_sample.infinite){
+                            r = 1.0;
+                        }
                         col = col + mul*bsdf->eval(
                             ray.d*(-1.0),
                             shadow_ray.d,
@@ -136,6 +147,9 @@ public:
 
 
         image->save(filename);
+    }
+    static const char* name(){
+        return "Pathttracer with NEE";
     }
 };
 }
