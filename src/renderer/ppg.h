@@ -152,6 +152,33 @@ class PPG : public Renderer{
 public:
     PPG(const RenderSettings& rs): samples(rs.spp), st(nullptr){}
 
+    float getFullPdf(Scene& sc, Intersection& s, Ray& r){
+
+    }
+
+    float getGuidingPdf(Scene& sc, Intersection& s, Ray& r){
+        
+    }
+
+
+    Vec3 getBxDFPdf(Scene& sc, Intersection& s, Ray& r){
+        
+    }
+
+    Vec3 getGuidingSample(Scene& sc, Intersection& s, Sampler& s){
+
+    }
+
+    Vec3 getBxDFSample(Scene& sc, Intersection& s, Ray& r, Sampler& s){
+        
+    }
+
+
+
+    Vec3 getFullSample(Scene& sc, Intersection& s, Sampler& s){
+
+    }
+
     void render(Scene& sc, std::string filename) {
         st = new SDTree({sc.primitive->get_bounds().min,sc.primitive->get_bounds().max});
         RgbImage* image= &(sc.camera->get_image());
