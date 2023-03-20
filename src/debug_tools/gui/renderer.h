@@ -3,6 +3,8 @@
 
 #include <renderer/renderer_registry.h>
 #include <thread>
+#include <memory>
+#include <atomic>
 #include <vickyr.h>
 #include <loader/loader.h>
 #include <scene.h>
@@ -421,16 +423,21 @@ private:
             //TODO: waht about no scene?
             auto c = std::dynamic_pointer_cast<CameraPerspective>(sv.scene.camera);
 
+            Vec3 r = c->getCoords().col(0);
+            Vec3 b = c->getCoords().col(2);
+
+
+
             glm::vec3 backward = glm::vec3(
-                                    c->getCoords().col(2).x,
-                                    c->getCoords().col(2).y,
-                                    c->getCoords().col(2).z
+                                    b.x,
+                                    b.y,
+                                    b.z
                                 );
 
             glm::vec3 right =  glm::vec3(
-                                    c->getCoords().col(0).x,
-                                    c->getCoords().col(0).y,
-                                    c->getCoords().col(0).z
+                                    r.x,
+                                    r.y,
+                                    r.z
                                 );
 
             glm::vec3 o = glm::vec3(

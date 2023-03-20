@@ -121,7 +121,7 @@ namespace cpppt{
             float r1 = s.sample()*M_PI*2.0;
             float r2 = acos(2.0*s.sample()-1.0);
 
-            Vec3 p = {cos(r1)*sin(r2), sin(r1)*sin(r2), cos(r2)};
+            Vec3 p = {cosf(r1)*sinf(r2), sinf(r1)*sinf(r2), cosf(r2)};
 
             it.hitpoint = p*radius + origin;
             it.normal = p;

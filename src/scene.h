@@ -11,6 +11,7 @@
 #include <texture/texture.h>
 #include <fstream>
 #include <sstream>
+#include <memory>
 namespace cpppt{
 
 struct SceneData{

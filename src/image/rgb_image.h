@@ -28,7 +28,7 @@ inline void put2char1(float a, unsigned char* pix){
         a=0.99999;
     }
 
-    *pix = unsigned char(unsigned int(a*255.0));
+    *pix = (unsigned char)((unsigned int)(a*255.0));
     return;
 }
 inline void put2char(float a, unsigned char* pix){

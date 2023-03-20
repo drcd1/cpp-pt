@@ -15,7 +15,7 @@ struct BVHNode: public Primitive{
     std::unique_ptr<Primitive> left;
     AABB aabb;
 
-    BVHNode(std::unique_ptr<Primitive>& right, std::unique_ptr<Primitive>& left, AABB& aabb): right(std::move(right)),left(std::move(left)),aabb(aabb){
+    BVHNode(std::unique_ptr<Primitive>&& right, std::unique_ptr<Primitive>&& left, AABB& aabb): right(std::move(right)),left(std::move(left)),aabb(aabb){
 
     }
 

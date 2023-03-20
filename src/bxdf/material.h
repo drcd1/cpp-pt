@@ -2,6 +2,8 @@
 #define CPPPT_MATERIAL
 
 #include <math/math.h>
+#include <memory>
+
 
 namespace cpppt{
 

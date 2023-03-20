@@ -156,30 +156,30 @@ public:
     PPG(const RenderSettings& rs): samples(rs.spp), st(nullptr){}
 
     float getFullPdf(Scene& sc, Intersection& it, Ray& r){
-
+        return 0.0f;
     }
 
     float getGuidingPdf(Scene& sc, Intersection& it, Ray& r){
-
+        return 0.0f;
     }
 
 
     Vec3 getBxDFPdf(Scene& sc, Intersection& it, Ray& r){
-
+        return Vec3(0.0f);
     }
 
     Vec3 getGuidingSample(Scene& sc, Intersection& it, Sampler& s){
-
+        return Vec3(0.0f);
     }
 
     Vec3 getBxDFSample(Scene& sc, Intersection& it, Ray& r, Sampler& s){
-
+        return Vec3(0.0f);
     }
 
 
 
     Vec3 getFullSample(Scene& sc, Intersection& it, Sampler& s){
-
+        return Vec3(0.0f);
     }
 
     void render(Scene& sc, std::string filename) {

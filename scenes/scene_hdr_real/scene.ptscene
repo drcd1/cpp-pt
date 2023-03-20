@@ -1,4 +1,4 @@
-environment image(images\table_mountain_1_puresky_2k.hdr) 2048 1024
+environment image(images/table_mountain_1_puresky_2k.hdr) 2048 1024
 camera 0.22221076488494873 -4.485464572906494 1.1526747941970825 0.16450616717338562 -3.4886248111724854 1.0980783700942993 0.0015638271579518914 0.05477770045399666 0.9984973669052124 0.2904120829258196
 obj models/Plane.ptobj materials/Wall.ptmat
 obj models/Suzanne.ptobj materials/Material.001.ptmat

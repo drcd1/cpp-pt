@@ -30,7 +30,7 @@ struct Vector4{
         return {x-a.x,y-a.y,z-a.z,w-a.w};
     }
     Vector4<T> operator-() const {
-        return {-x,-y,-z,-a.w};
+        return {-x,-y,-z,-w};
     }
 
     Vector4<T> operator/(const Vector4<T>& a) const {
@@ -262,7 +262,7 @@ struct Mat3{
         return { values[i], values[i+3], values[i+6]};
     }
 
-    static Mat3 Mat3::id(){
+    static Mat3 id(){
         return {
                 1.0,0.0,0.0,
                 0.0,1.0,0.0,
@@ -270,7 +270,7 @@ struct Mat3{
                 };
     }
 
-    static Mat3 Mat3::zeros(){
+    static Mat3 zeros(){
         return {0.0,0.0,0.0,
                 0.0,0.0,0.0,
                 0.0,0.0,0.0
@@ -483,7 +483,7 @@ struct Mat4{
         values[14] = o;
         values[15] = p;
     }
-    static Mat4 Mat4::id(){
+    static Mat4 id(){
         return {
                 1.0,0.0,0.0,0.0,
                 0.0,1.0,0.0,0.0,
@@ -492,7 +492,7 @@ struct Mat4{
                 };
     }
 
-    static Mat4 Mat4::zeros(){
+    static Mat4 zeros(){
         return {0.0,0.0,0.0,0.0,
                 0.0,0.0,0.0,0.0,
                 0.0,0.0,0.0,0.0,
@@ -650,16 +650,16 @@ bool solve_quadratic(float a, float b, float c, float* t1, float* t2){
 
 Vec3 sample_hemisphere_cos(float r1, float r2){
     float theta = r1*2.0*M_PI;
-    float sin_phi = sqrt(r2);
-    float cos_phi = sqrt((1.0-sin_phi*sin_phi));
+    float sin_phi = sqrtf(r2);
+    float cos_phi = sqrtf((1.0-sin_phi*sin_phi));
 
-    return Vec3(cos(theta)*sin_phi,sin(theta)*sin_phi,cos_phi);
+    return Vec3(cosf(theta)*sin_phi,sinf(theta)*sin_phi,cos_phi);
 }
 
 Vec3 sample_sphere(float r1, float r2){
     float theta = 2.0*M_PI*r1;
     float phi = acos(1.0- 2.0*M_PI*r2);
-    return {sin(phi)*cos(theta), sin(phi)*sin(theta), cos(phi)};
+    return {sinf(phi)*cosf(theta), sinf(phi)*sinf(theta), cosf(phi)};
 
 }
 

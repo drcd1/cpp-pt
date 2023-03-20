@@ -3,7 +3,7 @@
 
 #include <math/math.h>
 #include <bxdf/material.h>
-
+#include <memory>
 
 
 namespace cpppt{
