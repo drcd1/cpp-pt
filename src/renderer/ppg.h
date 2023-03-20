@@ -79,7 +79,8 @@ class PPG : public Renderer{
                 float weight = 1.0;
                 if(sampler.sample()>0.5){
                     sample = bsdf->sample(sampler, ray.d*(-1.0), intersection);
-                    weight = (sample.pdf/(sample.pdf + st->pdf(intersection.hitpoint, sample.wi)));
+                    sample.pdf = 0.5*(sample.pdf+  st->pdf(intersection.hitpoint, sample.wi));
+
                     if(std::isnan(weight) || sample.pdf==0){
                         std::cout<<"nan";
                     }
@@ -94,7 +95,9 @@ class PPG : public Renderer{
                         break;
                     }
                     float bsdf_pdf =  bsdf->pdf(ray.d*(-1.0), sample.wi, intersection);
-                    weight = (sample.pdf/(sample.pdf +bsdf_pdf));
+                    //weight = (sample.pdf/(sample.pdf +bsdf_pdf));
+                    sample.pdf = 0.5*(sample.pdf + bsdf_pdf);
+
                     if(std::isnan(weight)|| sample.pdf == 0.0){
                         std::cout<<"nan";
                     }
@@ -106,7 +109,7 @@ class PPG : public Renderer{
                 }
 
                 Vec3 sample_direction = sample.wi;
-                float p = sample.pdf*0.5;
+                float p = sample.pdf;
 
                 if(!bsdf->non_zero(intersection,ray.d*(-1.0),sample_direction)){
                     break;
@@ -152,30 +155,30 @@ class PPG : public Renderer{
 public:
     PPG(const RenderSettings& rs): samples(rs.spp), st(nullptr){}
 
-    float getFullPdf(Scene& sc, Intersection& s, Ray& r){
+    float getFullPdf(Scene& sc, Intersection& it, Ray& r){
 
     }
 
-    float getGuidingPdf(Scene& sc, Intersection& s, Ray& r){
-        
-    }
-
-
-    Vec3 getBxDFPdf(Scene& sc, Intersection& s, Ray& r){
-        
-    }
-
-    Vec3 getGuidingSample(Scene& sc, Intersection& s, Sampler& s){
+    float getGuidingPdf(Scene& sc, Intersection& it, Ray& r){
 
     }
 
-    Vec3 getBxDFSample(Scene& sc, Intersection& s, Ray& r, Sampler& s){
-        
+
+    Vec3 getBxDFPdf(Scene& sc, Intersection& it, Ray& r){
+
+    }
+
+    Vec3 getGuidingSample(Scene& sc, Intersection& it, Sampler& s){
+
+    }
+
+    Vec3 getBxDFSample(Scene& sc, Intersection& it, Ray& r, Sampler& s){
+
     }
 
 
 
-    Vec3 getFullSample(Scene& sc, Intersection& s, Sampler& s){
+    Vec3 getFullSample(Scene& sc, Intersection& it, Sampler& s){
 
     }
 

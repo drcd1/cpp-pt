@@ -1,0 +1,6 @@
+#ifndef CPPPT_DEBUG_TOOLS_DEFS
+#define CPPPT_DEBUG_TOOLS_DEFSS
+
+#define MAX_CHARS 128
+
+#endif

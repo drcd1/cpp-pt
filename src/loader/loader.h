@@ -2,8 +2,14 @@
 #define CPPPT_LOADER
 
 #include <renderer/renderer.h>
+#include <renderer/renderer_registry.h>
 #include <scene.h>
 
+#include <camera/camera_perspective.h>
+#include <light/point_light.h>
+#include <light/environment_light.h>
+#include <light/shape_light.h>
+#include <shape/triangle.h>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -21,6 +27,8 @@ namespace Loader{
     namespace {
         struct LoaderData {
             Scene* s;
+            std::shared_ptr<LightGroup> lg;
+            std::shared_ptr<Texture> env=nullptr;
             SceneData* sd;
             RenderSettings* rs;
             std::unordered_map<std::string,int> loaded_materials;
@@ -43,7 +51,7 @@ namespace Loader{
         }
 
         template <bool bw, bool srgb>
-        std::shared_ptr<Texture> get_texture(std::string directory, std::string tex){
+        std::shared_ptr<Texture> get_texture(const std::string& directory, std::string tex){
             if(tex.substr(0,3) == "rgb"){
                 float r,g,b;
                 parse_rgb(tex,&r,&g,&b);
@@ -113,6 +121,15 @@ namespace Loader{
             ret.second = str.substr(idx+1);
             return ret;
         }
+        inline void parse_env_light(LoaderData* ld,const std::string& dir,std::istringstream& iss){
+            std::cout<<"Parsing env"<<std::endl;
+            std::string filename;
+            int x;
+            int y;
+            iss>>filename>>x>>y;
+            auto im = get_texture<false, false>(dir,filename);
+            ld->env = im;
+        }
 
         inline void parse_camera(LoaderData* ld, std::istringstream& iss){
 
@@ -135,7 +152,7 @@ namespace Loader{
                 float intensity;
                 iss>>pos.x>>pos.y>>pos.z>>tex>>intensity;
                 //TODO: directory
-                ld->s->light->add(std::make_shared<PointLight>(pos,get_texture<false,true>("",tex),intensity));
+                ld->lg->add(std::make_shared<PointLight>(pos,get_texture<false,true>("",tex),intensity));
             } else {
                 throw std::runtime_error("Unknown light type: "+ type);
                 return;
@@ -143,7 +160,7 @@ namespace Loader{
         }
 
 
-        inline void parse_mat(LoaderData* ld, std::string dir, std::string filename){
+        inline void parse_mat(LoaderData* ld, const std::string& dir, std::string filename){
             auto it = ld->loaded_materials.find(filename);
             if(it!=ld->loaded_materials.end()){
                 ld->sd->materials.push_back(ld->sd->materials.at(it->second));
@@ -182,7 +199,15 @@ namespace Loader{
 
                     float intensity = 1.0;
                     iss>>word;
-                    std::shared_ptr<Texture> color = get_texture<false, true>(dir,word);
+
+                    bool srgb = false;
+                    //TODO: parse from the filetype
+                    std::shared_ptr<Texture> color;
+                    if(srgb){
+                        color = get_texture<false, true>(dir,word);
+                    } else {
+                        color = get_texture<false, false>(dir,word);
+                    }
                     /*TODO: check*//*
                     Vec3 col = color->sample(Vec3(0.8,0.2,0.0));
                     std::cout<<col.x<<" "<<col.y<<" "<<col.z<<std::endl;
@@ -269,29 +294,9 @@ namespace Loader{
             if(type == "renderer"){
                 std::string rtype;
                 iss>>rtype;
-                if(rtype=="debug"){
-                    rs->renderer = RenderSettings::RendererType::DEBUG;
-                } else if(rtype=="lighttracer"){
-                    rs->renderer = RenderSettings::RendererType::LIGHTTRACER;
-                } else if(rtype=="pure_pt"){
-                    rs->renderer = RenderSettings::RendererType::PURE_PT;
-                } else if(rtype=="pathtracer"){
-                    rs->renderer = RenderSettings::RendererType::PATHTRACER;
-                } else if(rtype=="pathtracer_mis"){
-                    rs->renderer = RenderSettings::RendererType::PATHTRACER_MIS;
-                }else if(rtype=="pathtracer_mlt"){
-                    rs->renderer = RenderSettings::RendererType::PATHTRACER_MLT;
-                }else if(rtype=="lighttracer_mlt"){
-                    rs->renderer = RenderSettings::RendererType::LIGHTTRACER_MLT;
-                }else if(rtype=="photonmapping"){
-                    rs->renderer = RenderSettings::RendererType::PHOTONMAPPING;
-                }else if(rtype=="ppg"){
-                    rs->renderer = RenderSettings::RendererType::PPG;
-                }else if(rtype=="validation"){
-                    rs->renderer = RenderSettings::RendererType::VALIDATION;
-                }else {
-                    throw std::runtime_error("Unknown renderer type: " + rtype);
-                }
+
+                rs->renderer = RendererRegistry::get()->id[rtype.c_str()];
+                //todo: catch error
             } else if (type == "spp") {
                 iss>>rs->spp;
             } else if (type == "resolution") {
@@ -319,12 +324,14 @@ namespace Loader{
 
 
         s->primitive = std::make_shared<BVH>();
-        s->light = std::make_shared<LightGroup>();
+        s->light = nullptr;
         auto dir_file = split_filename(filename);
         LoaderData ld;
         ld.s = s;
         ld.sd = sd;
         ld.rs = rs;
+        ld.lg = std::make_shared<LightGroup>();
+        ld.env = nullptr;
         std::ifstream ifs(filename);
         std::string line;
         while(std::getline(ifs,line)){
@@ -334,7 +341,9 @@ namespace Loader{
             std::istringstream iss(line);
             std::string type;
             iss>>type;
-            if(type == "camera"){
+            if(type == "environment"){
+                parse_env_light(&ld, dir_file.first,iss);
+            } else if(type == "camera"){
                 parse_camera(&ld,iss);
             } else if (type == "obj") {
                 std::string obj;
@@ -360,7 +369,7 @@ namespace Loader{
                 s->primitive->add(helper);
 
                 if(sd->materials.at(i)->is_emissive()){
-                    s->light->add(std::make_shared<ShapeLight>(helper));
+                    ld.lg->add(std::make_shared<ShapeLight>(helper));
                 }
 
             }
@@ -370,6 +379,22 @@ namespace Loader{
         std::cout<<"building accel..."<<std::endl;
 
         s->primitive->build();
+        std::shared_ptr<EnvironmentLight> env_l = nullptr;
+        if(ld.env != nullptr){
+            env_l = std::make_shared<EnvironmentLight>(
+                ld.env,
+                s->primitive->get_bounds().min, s->primitive->get_bounds().max,
+                2048, 1024
+            );
+        }
+        if(env_l==nullptr){
+            s->light = ld.lg;
+        } else if(ld.lg->size() == 0){
+            s->light = env_l;
+        } else {
+            s->light = std::make_shared<SceneLights>(ld.lg,env_l);
+        }
+
         //s->light->build();
     }
 

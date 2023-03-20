@@ -25,7 +25,7 @@ public:
         float x = uv.x*im->res.x;
         float y = (1.0-uv.y)*im->res.y;
         if(filtering == Filtering::POINT){
-            return *(im->get_pixel(std::floor(x), std::floor(y)));
+            return (im->get_pixel_v(std::floor(x), std::floor(y)));
         } else /*filtering is bilinear*/{
             x = x-0.5;
             y = y-0.5;
@@ -33,8 +33,8 @@ public:
             int j = std::floor(y);
             x = x-float(i);
             y = y-float(j);
-            return ((*(im->get_pixel(i,j)))*(1.0-x) + (*(im->get_pixel(i+1,j)))*x )*(1.0-y)+
-                    ((*(im->get_pixel(i,j+1)))*(1.0-x) + (*(im->get_pixel(i+1,j+1)))*x)*y;
+            return (((im->get_pixel_v(i,j)))*(1.0-x) + ((im->get_pixel_v(i+1,j)))*x )*(1.0-y)+
+                    (((im->get_pixel_v(i,j+1)))*(1.0-x) + ((im->get_pixel_v(i+1,j+1)))*x)*y;
 
         }
     }

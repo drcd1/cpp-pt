@@ -118,8 +118,8 @@ public:
         leaves.push_back(Leaf({-M_PI,-1},{2.0*M_PI,2}));
     }
     DTree(const DTree& d): root(d.root),count(d.count), radiance(d.radiance), leaves(d.leaves){
-        std::cout<<"Creating dtree: "<<leaves.size()<<std::endl;
-        std::cout<<"From: "<<d.leaves.size()<<std::endl;
+       // std::cout<<"Creating dtree: "<<leaves.size()<<std::endl;
+       // std::cout<<"From: "<<d.leaves.size()<<std::endl;
     }
     ~DTree(){
 
@@ -271,7 +271,7 @@ class SDTree{
     Bounds<Vec3> spatial_bounds;
     SNode root;
     int iteration = 1;
-    int c = 12000;
+    int c = 24000;
 
 
     Vec2 get_area(DNode& root, float x, float y) const {

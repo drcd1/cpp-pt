@@ -3,11 +3,9 @@
 
 #include <math/math.h>
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb/stb_image_write.h>
+#include <stb_image_write.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
+#include <stb_image.h>
 
 #include <vector>
 #include <string>
@@ -212,6 +210,10 @@ public:
         handle_border(&i,&j);
         return &(  pixels.data()[i+j*res.x]);
     }
+    P get_pixel_v(int i, int j){
+        handle_border(&i,&j);
+        return (  pixels.data()[i+j*res.x]);
+    }
     void handle_border(int* i, int* j){
 
         if(*i >= res.x){
@@ -241,13 +243,13 @@ public:
                 break;
                 case ImageDef::REPEAT:
                 case ImageDef::MIRROR_Y_REPEAT_X:
-                    *i = (*i)%res.x + res.x;
+                    *i = ((*i)%res.x + res.x)%res.x;
                 break;
                 case ImageDef::MIRROR:
                 default:
                     int help = *i/res.x;
                     if(help%2 == 0){
-                        *i = (*i)%res.x + res.x;
+                        *i = ((*i)%res.x + res.x)%res.x;
                     } else {
                         *i = (-(*i)-1)%res.x;
                     }
@@ -281,14 +283,14 @@ public:
                     *j = 0;
                 break;
                 case ImageDef::REPEAT:
-                    *j = (*j)%res.y + res.y;
+                    *j = ((*j)%res.y + res.y)%res.y;
                 break;
                 case ImageDef::MIRROR:
                 case ImageDef::MIRROR_Y_REPEAT_X:
                 default:
                     int help = *j/res.y;
                     if(help%2 == 0){
-                        *j = (*j)%res.y + res.y;
+                        *j = ((*j)%res.y + res.y)%res.y;
                     } else {
                         *j = (-(*j)-1)%res.y;
                     }

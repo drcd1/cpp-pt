@@ -1,3 +1,5 @@
+#ifndef USE_GUI
+
 #include <camera/camera_perspective.h>
 #include <renderer/dummy_renderer.h>
 #include <renderer/debug_renderer.h>
@@ -9,6 +11,9 @@
 #include <renderer/photonmapping.h>
 #include <renderer/pure_pt.h>
 #include <renderer/ppg.h>
+#include <renderer/ppg_lt.h>
+#include <renderer/ppg_nee.h>
+#include <renderer/vcm.h>
 #include <primitive/simple_group.h>
 #include <primitive/bvh.h>
 #include <shape/mesh.h>
@@ -99,30 +104,9 @@ int main(int argc, char** argv){
     Loader::load_render_settings(&rs,argv[1]);
     Loader::load_scene(&s,&sd,&rs,rs.scene_name);
 
-    std::unique_ptr<Renderer> renderer;
+    std::shared_ptr<Renderer> renderer =
+        RendererRegistry::get()->create(rs.renderer,rs);
 
-    if(rs.renderer == RenderSettings::RendererType::PATHTRACER){
-        renderer = std::make_unique<Pathtracer>(rs);
-    } else if(rs.renderer == RenderSettings::RendererType::PATHTRACER_MIS){
-        renderer = std::make_unique<PathtracerMIS>(rs);
-    } else if(rs.renderer == RenderSettings::RendererType::LIGHTTRACER){
-        renderer = std::make_unique<Lighttracer>(rs);
-    } else if(rs.renderer == RenderSettings::RendererType::DEBUG){
-        renderer = std::make_unique<DebugRenderer>();
-    }  else if(rs.renderer == RenderSettings::RendererType::PATHTRACER_MLT){
-        renderer = std::make_unique<PathtracerMLT>(rs);
-    } else if(rs.renderer == RenderSettings::RendererType::LIGHTTRACER_MLT){
-        renderer = std::make_unique<LighttracerMLT>(rs);
-    } else if(rs.renderer == RenderSettings::RendererType::PHOTONMAPPING){
-        renderer = std::make_unique<PhotonMapping>(rs);
-    } else if(rs.renderer == RenderSettings::RendererType::PURE_PT){
-        renderer = std::make_unique<PurePt>(rs);
-    }else if(rs.renderer == RenderSettings::RendererType::PPG){
-        renderer = std::make_unique<PPG>(rs);
-    }else if(rs.renderer == RenderSettings::RendererType::VALIDATION){
-        runValidation();
-        return 0;
-    }
 
     //DummyRenderer renderer;
 
@@ -144,3 +128,4 @@ int main(int argc, char** argv){
         std::cout<<e.what()<<std::endl;
     }
 }
+#endif

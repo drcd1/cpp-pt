@@ -134,8 +134,31 @@ class Mesh{
             return bitangents.size()>0;
         }
 
-        int n_triangles(){
+        int n_triangles() const {
             return triangles.size();
+        }
+
+        int n_vertices() const {
+            return vertices.size();
+        }
+
+        const auto& getVertices() const {
+            return vertices;
+        }
+
+        const auto& getUvs() const {
+            return uvs;
+        }
+
+        const auto& getNormals() const {
+            return normals;
+        }
+
+        const auto& getBitangents() const {
+            return bitangents;
+        }
+        const auto& getTriangles() const {
+            return triangles;
         }
 
 

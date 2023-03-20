@@ -46,6 +46,10 @@ class PathtracerMIS : public Renderer{
         for(int i = 0; i<32; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
             if(!intersected){
+                //only infinite not delta lights
+                if(!scene.light->is_infinite_not_delta()){
+                    break;
+                }
                 Vec3 ret = render_sky(ray,scene);
                 float p_bsdf_bsdf = p;
                 float p_bsdf_nee = scene.light->pdf(-1,scene.light.get(), ray.d,ray.o);
@@ -159,6 +163,16 @@ public:
 #ifndef NO_GUI
     void updateProgress(RenderProgress& progress) override{
         total_pixels = std::max(total_pixels,1);
+
+        int current_pixels =0;
+
+        int tmp = 0;
+        for(int k = 0; k<counter.size(); k++){
+            tmp+=counter.at(k);
+        }
+        current_pixels = tmp;
+
+
         progress.percentage = float(current_pixels)/total_pixels;
         //progress.percentage= 0.3;
         progress.current_task = 1;
@@ -181,21 +195,13 @@ public:
 
         #pragma omp parallel for
         for(int i = 0; i<res.x; i++){
+            #ifndef NO_GUI
             counter.at(omp_get_thread_num()) += res.y;
-
+            #endif
 
             RandomSampler s(i);
 
-            #ifndef NO_GUI
 
-            if(omp_get_thread_num()==0){
-                int tmp = 0;
-                for(int k = 0; k<counter_size; k++){
-                    tmp+=counter.at(k);
-                }
-                current_pixels = tmp;
-            }
-            #endif
 
             //if(i%50==0)
             //    std::cout<<"rendering line "<<i<<std::endl;

@@ -12,7 +12,7 @@ import shutil
 # each mesh has only one material
 # modifiers applied
     
-path = 'D:/cpp-pt/scenes/scene_hdr_real/'
+path = 'D:/cpp-pt/scenes/bathroom/'
 filename = "scene"
 
 def save_tex(node):
@@ -41,14 +41,6 @@ def save_normal(node):
         print(e)
         return "rgb(0.5,0.5,1.0)"
 
-def save_env(f):
-    node = bpy.data.worlds[0].node_tree.nodes["World Output"].inputs["Surface"].links[0].from_node
-    tex = save_tex(node.inputs["Color"])
-    if(not tex.startswith("image")):
-        return
-    else:
-        print("environment", tex, "2048 1024",file=f)
-
 def save_material(material, filename):
     
     print("saving_mat:",material)
@@ -59,8 +51,8 @@ def save_material(material, filename):
     metal = "float(0.0)"
     transparent = "float(0.0)"
     ior = "float(1.3)"
-    normal = "rgb(0.5,0.5,1.0)"
-    alpha = "float(1.0)"
+    normal = None
+    alpha = None
     
     
     if(node.name == 'Principled BSDF'):
@@ -199,8 +191,6 @@ def save_camera(ob,f):
 
 f = open(path+filename+".ptscene","w");
 camera_saved = False
-
-save_env(f)
 
 for ob in bpy.data.objects:
     if ob.type == 'MESH':

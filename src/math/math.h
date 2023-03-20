@@ -258,6 +258,10 @@ struct Mat3{
         values[7] = h;
         values[8] = i;
     }
+    Vec3 col(int i) const {
+        return { values[i], values[i+3], values[i+6]};
+    }
+
     static Mat3 Mat3::id(){
         return {
                 1.0,0.0,0.0,

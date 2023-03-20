@@ -6,6 +6,8 @@
 #include <string>
 #include <scene.h>
 #include <functional>
+#include <optional>
+#include <omp.h>
 
 
 namespace cpppt{
@@ -44,29 +46,26 @@ public:
         finish();
     };
 
-    virtual void getRayRadiance(const Ray& r, const Scene& sc){
 
-    }
 
-    
 
     //this should be everywhere but here
     static int toHemiDirection(Vec2 coords,const Intersection& is, Ray& r){
-        float l = coords.length();
-        if(coords.length>=1.0){
+        float l = length(coords);
+        if(l>=1.0){
             return -1;
         }
-        
-        float z = sqrt(1.0-coords.lensqr());
+
+        float z = sqrt(1.0-l*l);
         r.o = is.hitpoint;
         r.d = {coords.x, coords.y, z};
 
         //orthogonal(is.normal,&x,&y,&z);
         //Mat3 coords(y,z,x);
-        Mat3 coords(is.tangent,is.bitangent,is.normal);
+        Mat3 coords3(is.tangent,is.bitangent,is.normal);
 
         //TODO SHOULD I TRANSPOSE COORDS
-        r.d = coords*r.d; 
+        r.d = coords3*r.d;
 
         return 0;
 
@@ -74,11 +73,11 @@ public:
 
     //visualises some function around an hemisphere
     //this should be: a specific renderer and a camera
-    static getHemiRender(
-        std::function<Vec3(const Vec2& coords)>& fn, RgbImage& image, 
-        int spp_sqrt, 
+    static void getHemiRender(
+        std::function<Vec3(const Vec2& coords)>& fn, RgbImage& image,
+        int spp_sqrt=1,
         std::optional<std::function<void()>>&& begin = std::nullopt,
-        std::optional<std::function<void()>>&& end = std::nullopt   
+        std::optional<std::function<void()>>&& end = std::nullopt
     )
     {
 
@@ -86,34 +85,35 @@ public:
             begin.value()();
         }
 
-        #pragma omp_parallel_for
-        for(int i = 0; i<image.width(); i++){
-            Sampler s(i);
-            for(int j = 0; j<image.height(); j++){
-                Vec3 acc;
-                for(int k = 0; k<spp_sqrt; k++)
+        #pragma omp parallel for
+        for(int i = 0; i<image.res.x; i++){
+            RandomSampler s(i);
+            for(int j = 0; j<image.res.y; j++){
+                Vec3 acc(0.0);
+                for(int k = 0; k<spp_sqrt; k++){
                     for(int l=0; l<spp_sqrt; l++){
-                        Vec2 disp = {k+s.sample(), j+s.sample()}/spp_sqrt;
+                        Vec2 disp = {k+s.sample(), j+s.sample()};
+                        disp = disp*(1.0/spp_sqrt);
                         Vec2 coords = {
-                                (i+disp.x)/image.width * 2.0 -1.0,
-                                (j+disp.y)/image.width * 2.0 -1.0
-                        }
+                                (float(i)+disp.x)/float(image.res.x) * 2.0f -1.0f,
+                                (float(j)+disp.y)/float(image.res.y) * 2.0f -1.0f
+                        };
 
-                        acc +=fn(coords)/(spp_sqrt*spp_sqrt);
-                        
+                        acc = acc + fn(coords)/(spp_sqrt*spp_sqrt);
+
                     }
 
                 }
 
-                image.get_pixel(i,j) = acc;   
+                *(image.get_pixel(i,j)) = acc;
 
 
             }
-        } 
-        
+        }
+
         if(end.has_value()){
             end.value()();
-        }       
+        }
     }
 
 

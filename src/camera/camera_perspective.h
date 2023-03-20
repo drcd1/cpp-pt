@@ -26,6 +26,17 @@ public:
         aspect_ratio = float(resolution.x)/float(resolution.y);
     }
 
+    float getFovy() const {
+        return 2.0*atan(tan_fovy);
+    }
+    const Vec3& getOrigin() const {
+        return origin;
+    }
+
+    const Mat3& getCoords() const {
+        return coords;
+    }
+
 
     Ray get_ray(Vec2 xy) const {
         Vec3 direction;
@@ -39,6 +50,20 @@ public:
     };
     RgbImage& get_image()  {
         return image;
+    }
+
+
+
+    virtual float pdf(const Vec3& pt, const Vec3& normal) const {
+        float p = 1.0/(image.res.x*image.res.y);
+        Vec3 dir = coords.transpose()*(pt-origin);
+        //TODO: optimize
+        float r = length(dir);
+        Vec3 n_dir = dir/r;
+        p *= dot(dir,coords*(Vec3(0.0,0.0,-1.0)));
+        p *= fabs(dot(normal,n_dir))/(r*r);
+        return p;
+
     }
 
 
