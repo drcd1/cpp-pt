@@ -23,7 +23,7 @@ class Scene {
 
 public:
     std::shared_ptr<Camera> camera;
-    std::shared_ptr<BVH> primitive;
+    std::shared_ptr<Primitive> primitive;
     std::shared_ptr<Light> light;
 };
 

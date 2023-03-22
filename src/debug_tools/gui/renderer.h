@@ -12,6 +12,8 @@
 #include <imgui.h>
 #include <omp.h>
 #include <queue>
+#include <optional>
+#include <mutex>
 #include <debug_tools/gui/camera.h>
 #include <debug_tools/gui/clock.h>
 #include <debug_tools/gui/scene.h>
@@ -35,11 +37,60 @@ struct Task{
     enum Name {
         NONE,
         LOADING,
-        RENDERING
+        RENDERING,
+        DEBUG
     };
     std::function<void()> task;
     Name name;
+    std::optional<std::function<void()>> post = std::nullopt;
 };
+
+
+
+    struct UIImage{
+        VickyR::AllocatedTextureImage tex;
+        VkDescriptorSet id;
+        std::shared_ptr<RgbImage> image;
+        VickyR::VickyR* renderer;
+        std::vector<char> name = std::vector<char>(MAX_CHARS,'\0') ;
+
+        UIImage(std::shared_ptr<RgbImage> a_im, VickyR::VickyR* renderer):image(a_im),renderer(renderer){
+
+
+            int w=image->res.x;
+            int h=image->res.y;
+
+            uint8_t* tmp = new uint8_t[w*h*4];
+            for(int i = 0; i<h;i++){
+                for(int j =0; j<w; j++){
+                    Vec3 p = pixel_ops::linear2srgb((*image->get_pixel(j,i)));
+                    pixel_ops::put2char(p,&tmp[(i*w+j)*4]);
+                    tmp[(i*w+j)*4+3] = 255;
+                }
+            }
+
+            //todo: less waiting
+            vkDeviceWaitIdle(renderer->getDevice());
+
+            tex = renderer->getIV().imagePool.allocate();
+
+            renderer->createFullTextureImage(*tex.im, tmp,w,h);
+            id = ImGui_ImplVulkan_AddTexture(
+                tex.im->sampler,
+                tex.im->view,
+                tex.im->layout
+            );
+
+            delete[] tmp;
+        }
+        ~UIImage(){
+            vkDeviceWaitIdle(renderer->getDevice());
+
+            ImGui_ImplVulkan_RemoveTexture(id);
+            renderer->getIV().imagePool.deallocate(tex.id);
+
+        }
+    };
 
 
 
@@ -60,6 +111,7 @@ class RendererGUI{
 
     };
 
+    std::shared_ptr<Intersection> testIntersection = nullptr;
 
     SceneGUI sceneGUI;
     SharedVars sv;
@@ -107,51 +159,75 @@ class RendererGUI{
     };
     Clock clock;
 
-    VickyR::AllocatedTextureImage showRenderTex;
-    VkDescriptorSet renderTexId;
-/*
-    VickyR::TextureImage tim = renderer_vk->createTextureImage();
-    renderer_vk->deleteTexture(tim);
-
-    renderer_vk->createDummyTexture();
-*/
-    VkDescriptorSet tex_id = ImGui_ImplVulkan_AddTexture(
-        renderer_vk->getTextureImage().sampler,
-        renderer_vk->getTextureImage().view,
-        renderer_vk->getTextureImage().layout
-
-    );
-
-
+    std::shared_ptr<UIImage> uim = nullptr;
     Mouse mouse;
 
 
 public:
     RendererGUI(VickyR::VickyR& renderer):messenger(this),renderer_vk(&renderer){
         omp_set_num_threads(std::max(1, omp_get_max_threads()-1));
-        showRenderTex = renderer_vk->getIV().imagePool.allocate();
-
+        {
 
         int w=128;
         int h=128;
+
+        std::shared_ptr<RgbImage> im = std::make_shared<RgbImage>(Vec2i(w,h));
+
         uint8_t* tmp = new uint8_t[w*h*4];
         for(int i = 0; i<h;i++){
             for(int j =0; j<w; j++){
-                tmp[(i*w+j)*4] = (i%2!= j%2)?255:0;
-                tmp[(i*w+j)*4+1] = 0;
-                tmp[(i*w+j)*4+2] = (i%2!= j%2)?255:0;
-                tmp[(i*w+j)*4+3] = 255;
+                float a = (i%2==j%2)?1.0:0.0;
+                *im->get_pixel(j,i) = Vec3(a,0,a);
             }
         }
 
-        renderer_vk->createFullTextureImage(*showRenderTex.im, tmp,w,h);
-        renderTexId = ImGui_ImplVulkan_AddTexture(
-            showRenderTex.im->sampler,
-            showRenderTex.im->view,
-            showRenderTex.im->layout
-        );
+        uim = std::make_shared<UIImage>(im,renderer_vk);
 
-        delete[] tmp;
+
+        }/*
+        {
+        std::shared_ptr<RgbImage> test=std::make_shared<RgbImage>(Vec2i(16,16));
+        for(int i = 0; i<16;i++){
+            for(int j =0; j<16; j++){
+                float a = (i%2!=j%2)?1.0:0.0;
+                *test->get_pixel(i,j)=Vec3(a,0.0,a);
+            }
+        }
+        debugResults.results.push_back(std::make_shared<UIImage>
+        (test,renderer_vk));
+        }
+        */
+
+    }
+
+    //Note: callbacks are not guaranteed to be called synchronously,
+    //but they are
+    void storeIntersection(){
+
+        std::cout<<"StoreIntersection!"<<std::endl;
+        //SYNC PROBLEMS!
+        if(current_task!=Task::Name::NONE)
+            return;
+        sync();
+        auto res = renderer_vk->getIV().swapChainExtent;
+
+        auto res2 = sv.scene.camera->get_image().res;
+
+
+
+        Vec2 coords = Vec2(mouse.x/res.width, (res.height-mouse.y)/res.height)*2.0-1.0;
+        coords.x *=  float(res.width)/float(res.height)*float(res2.y)/float(res2.x);
+
+        Ray r = sv.scene.camera->get_ray(coords);
+
+        std::cout<<coords.x<<" ! "<<coords.y<<std::endl;
+        Intersection is;
+        if(sv.scene.primitive->intersect(r,&is)){
+            std::cout<<"INTERSECTED!"<<std::endl;
+            testIntersection = std::make_shared<Intersection>(is);
+        } else {
+            testIntersection = nullptr;
+        }
     }
 
     CameraGUI& getCameraGUI(){
@@ -180,33 +256,8 @@ public:
 
     void load_render(){
         auto im = sv.scene.camera->get_image();
-        int w=im.res.x;
-        int h=im.res.y;
-        uint8_t* tmp = new uint8_t[w*h*4];
-        for(int i = 0; i<h;i++){
-            for(int j =0; j<w; j++){
-                Vec3 p = pixel_ops::linear2srgb((*im.get_pixel(j,i))*sceneGUI.exposure);
-                pixel_ops::put2char(p,&tmp[(i*w+j)*4]);
-                tmp[(i*w+j)*4+3] = 255;
-            }
-        }
+        uim = std::make_shared<UIImage>(std::make_shared<RgbImage>(im), renderer_vk);
 
-
-        //todo: destroy should set resources to be deleted, but only delete them after their not in use
-        vkDeviceWaitIdle(renderer_vk->getDevice());
-        showRenderTex.im->destroy(renderer_vk->getIV().device);
-        renderer_vk->createFullTextureImage(*showRenderTex.im, tmp,w,h);
-        renderTexId = ImGui_ImplVulkan_AddTexture(
-            showRenderTex.im->sampler,
-            showRenderTex.im->view,
-            showRenderTex.im->layout
-        );
-
-
-
-
-
-        delete[] tmp;
     }
 
     void updateMouse(){
@@ -226,6 +277,9 @@ public:
 
             camera.controls.rotate_up(-mdy*camera_gui.mouseSpeed*0.01);
             camera.controls.rotate_right(mdx*camera_gui.mouseSpeed*0.01);
+        } else {
+            glfwGetCursorPos(renderer_vk->getWindow(), &mouse.x, &mouse.y);
+            //std::cout<<mouse.x<<"! ! "<<mouse.y<<std::endl;
         }
     }
 
@@ -288,10 +342,10 @@ public:
 
         ImGui::Begin("Render Result");
 
-        float aspect = float(showRenderTex.im->width)/float(showRenderTex.im->height);
+        float aspect = float(uim->tex.im->width)/float(uim->tex.im->height);
         float height = ImGui::GetWindowContentRegionMax().y-ImGui::GetWindowContentRegionMin().y;
 
-        ImGui::Image((ImTextureID)renderTexId,
+        ImGui::Image((ImTextureID)uim->id,
          {height*aspect,
          height
          });
@@ -339,11 +393,105 @@ public:
 
 
         showStatus();
+        intersectionResult();
+        debugOptions();
 
         ImGui::End();
 
+        showDebugResults();
+
     }
 private:
+
+    char intersectionMessage[MAX_CHARS];
+
+    struct DebugResults{
+        std::mutex lock;
+        std::vector<std::shared_ptr<UIImage>> results;
+    };
+    DebugResults debugResults;
+
+    void debugOptions(){
+        if(reg->names[current_renderer]=="PPG"){
+            if(ImGui::Button("Render Hemisphere")){
+                renderPPGDebug();
+            }
+
+
+
+        }
+    }
+    void renderPPGDebug(){
+        std::shared_ptr<RgbImage> a1 = std::make_shared<RgbImage>(Vec2i(256,256));
+        std::shared_ptr<RgbImage> a2 = std::make_shared<RgbImage>(Vec2i(256,256));
+        //std::shared_ptr<RgbImage> a2 = std::make_shared<RgbImage>(Vec2i(256,256));
+        //std::shared_ptr<RgbImage> a3 = std::make_shared<RgbImage>(Vec2i(256,256));
+        //std::shared_ptr<RgbImage> a4 = std::make_shared<RgbImage>(Vec2i(256,256));
+
+        debugResults.results = std::vector<std::shared_ptr<UIImage>>();
+        auto r1 = std::dynamic_pointer_cast<PPG>(sv.renderer);
+        if(r1 == nullptr){
+            throw std::runtime_error("Unable to use PPG renderer for debug");
+        }
+        tasks.push({[&,r1,a1,a2](){
+            Renderer::getHemiRender(
+                [&](const Vec2& coords, Sampler& s){
+                    return r1->getRadiance(sv.scene,*testIntersection,coords,s);
+                }
+                ,a1);
+            Renderer::getHemiRender(
+                [&](const Vec2& coords, Sampler& s){
+                    return Vec3(r1->getGuidingPdf(sv.scene,*testIntersection,coords));
+                }
+                ,a2);
+            },
+            Task::Name::DEBUG,
+            [&,a1,a2](){
+                debugResults.results.push_back(std::make_shared<UIImage>(a1,renderer_vk));
+                debugResults.results.push_back(std::make_shared<UIImage>(a2,renderer_vk));
+            }
+        });
+
+    }
+
+    void showDebugResults(){
+        if(current_task != Task::Name::DEBUG){
+            if(debugResults.results.size()>0){
+                ImGui::Begin("DebugResults");
+                for(int i = 0; i<debugResults.results.size(); i++){
+
+                    auto im = debugResults.results.at(i);
+                    float aspect = float(im->tex.im->width)/float(im->tex.im->height);
+                    float width = ImGui::GetWindowContentRegionMax().x-ImGui::GetWindowContentRegionMin().x;
+
+                    ImGui::Image((ImTextureID)im->id,
+                    {width,
+                    width/aspect
+                    });
+                    ImGui::PushID(i);
+
+                    ImGui::InputText("Filename", im->name.data(),MAX_CHARS);
+                    if(ImGui::Button("Save")){
+                        im->image->save(std::string(im->name.data()));
+                    }
+                    ImGui::PopID();
+                }
+
+
+                ImGui::End();
+            }
+        }
+    }
+
+    void intersectionResult(){
+        if(testIntersection!=nullptr){
+            ImGui::Text("Current Intersection: ");
+            sprintf(intersectionMessage,"x: %f y:%f z:%f", testIntersection->hitpoint.x,
+            testIntersection->hitpoint.y,
+            testIntersection->hitpoint.z);
+            ImGui::Text(intersectionMessage);
+        }
+    }
 
     void loadSceneButton(){
 
@@ -353,7 +501,7 @@ private:
             ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
         }
         if(ImGui::Button("Load Scene") && current_task == Task::Name::NONE && !local_help){
-
+            testIntersection = nullptr;
             sv.rs.scene_name = std::string(sceneGUI.scene_filename);
             tasks.push({
 
@@ -373,10 +521,14 @@ private:
     void unqueueAndRunTasks(){
         if(tasks.size()>0 && current_task == Task::Name::NONE){
             if(task_thread!=nullptr){
+                auto t = tasks.front();
                 tasks.pop();
                 std::cout<<"Joining"<<std::endl;
                 task_thread->join();
                 task_thread=nullptr;
+                if(t.post.has_value()){
+                    t.post.value()();
+                }
             }
             if(tasks.size()>0){
                 current_task = tasks.front().name;
@@ -474,6 +626,11 @@ private:
     void showStatus(){
         if(current_task == Task::Name::LOADING){
             ImGui::Text("Loading Scene");
+        }
+
+
+        if(current_task == Task::Name::DEBUG){
+            ImGui::Text("Debug render");
         }
 
         if(current_task == Task::Name::RENDERING && sv.renderer){

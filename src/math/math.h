@@ -635,7 +635,7 @@ struct Mat4{
 
 
 
-bool solve_quadratic(float a, float b, float c, float* t1, float* t2){
+inline bool solve_quadratic(float a, float b, float c, float* t1, float* t2){
     float det = b*b-4.0*a*c;
     if(det<0.0) {
         return false;
@@ -648,7 +648,7 @@ bool solve_quadratic(float a, float b, float c, float* t1, float* t2){
     return true;
 }
 
-Vec3 sample_hemisphere_cos(float r1, float r2){
+inline Vec3 sample_hemisphere_cos(float r1, float r2){
     float theta = r1*2.0*M_PI;
     float sin_phi = sqrtf(r2);
     float cos_phi = sqrtf((1.0-sin_phi*sin_phi));
@@ -656,7 +656,7 @@ Vec3 sample_hemisphere_cos(float r1, float r2){
     return Vec3(cosf(theta)*sin_phi,sinf(theta)*sin_phi,cos_phi);
 }
 
-Vec3 sample_sphere(float r1, float r2){
+inline Vec3 sample_sphere(float r1, float r2){
     float theta = 2.0*M_PI*r1;
     float phi = acos(1.0- 2.0*M_PI*r2);
     return {sinf(phi)*cosf(theta), sinf(phi)*sinf(theta), cosf(phi)};
@@ -664,7 +664,7 @@ Vec3 sample_sphere(float r1, float r2){
 }
 
 //gets an orthogonal system -- function inpired PBRT
-void orthogonal(const Vec3& v1, Vec3* x, Vec3* y, Vec3* z) {
+inline void orthogonal(const Vec3& v1, Vec3* x, Vec3* y, Vec3* z) {
     float abs_x = fabs(v1.x);
     float abs_y = fabs(v1.y);
     float abs_z = fabs(v1.z);
@@ -692,7 +692,7 @@ void orthogonal(const Vec3& v1, Vec3* x, Vec3* y, Vec3* z) {
 }
 
 
-void print(const Mat3& m) {
+inline void print(const Mat3& m) {
     std::cout<<m.values[0]<<" "<<m.values[1]<<" "<<m.values[2]<<std::endl;
     std::cout<<m.values[3]<<" "<<m.values[4]<<" "<<m.values[5]<<std::endl;
     std::cout<<m.values[6]<<" "<<m.values[7]<<" "<<m.values[8]<<std::endl;
@@ -700,7 +700,7 @@ void print(const Mat3& m) {
 
 
 
-void order2(float& min, float& max){
+inline void order2(float& min, float& max){
     if(max>=min)
         return;
     float tmp = min;
@@ -709,7 +709,7 @@ void order2(float& min, float& max){
 }
 
 
-int compute_sign(const float& f){
+inline int compute_sign(const float& f){
     return  (f>0.0) - (f<0.0);
 }
 

@@ -37,7 +37,7 @@ class Pathtracer : public Renderer{
         bool sampled_delta = true;
         for(int i = 0; i<32; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
-            if(!intersected){
+            if(!intersected && sampled_delta){
                 col = col + mul*render_sky(ray,scene)*float(sampled_delta);
                 break;
             } else {
@@ -149,7 +149,7 @@ public:
         image->save(filename);
     }
     static const char* name(){
-        return "Pathttracer with NEE";
+        return "PathttracerNEE";
     }
 };
 }

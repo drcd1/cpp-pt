@@ -13,13 +13,20 @@
 namespace cpppt{
 
 
+
+
 struct RenderSettings{
+    enum RT_ENGINE{
+        BVH,
+        EMBREE
+    };
     int renderer = 0;
     int spp = 1;
     int resX = 256;
     int resY = 256;
     std::string scene_name = "";
     std::string output_name = "";
+    RT_ENGINE rt_engine=RT_ENGINE::EMBREE;
 };
 
 struct RenderProgress{
@@ -57,7 +64,7 @@ public:
         }
 
         float z = sqrt(1.0-l*l);
-        r.o = is.hitpoint;
+        r.o = is.hitpoint+is.normal*EPS;
         r.d = {coords.x, coords.y, z};
 
         //orthogonal(is.normal,&x,&y,&z);
@@ -73,8 +80,55 @@ public:
 
     //visualises some function around an hemisphere
     //this should be: a specific renderer and a camera
+    template
+    <typename Fn>
     static void getHemiRender(
-        std::function<Vec3(const Vec2& coords)>& fn, RgbImage& image,
+        Fn fn, std::shared_ptr<RgbImage> image,
+        int spp_sqrt=1,
+        std::optional<std::function<void()>>&& begin = std::nullopt,
+        std::optional<std::function<void()>>&& end = std::nullopt
+    )
+    {
+
+        if(begin.has_value()){
+            begin.value()();
+        }
+
+        #pragma omp parallel for
+        for(int i = 0; i<image->res.x; i++){
+            RandomSampler s(i);
+            for(int j = 0; j<image->res.y; j++){
+                Vec3 acc(0.0);
+                for(int k = 0; k<spp_sqrt; k++){
+                    for(int l=0; l<spp_sqrt; l++){
+                        Vec2 disp = {k+s.sample(), l+s.sample()};
+                        disp = disp*(1.0/spp_sqrt);
+                        Vec2 coords = {
+                                (float(i)+disp.x)/float(image->res.x) * 2.0f -1.0f,
+                                (float(j)+disp.y)/float(image->res.y) * 2.0f -1.0f
+                        };
+
+                        acc = acc + fn(coords,s)/(spp_sqrt*spp_sqrt);
+
+                    }
+
+                }
+
+                *(image->get_pixel(i,j)) = acc;
+
+
+            }
+        }
+
+        if(end.has_value()){
+            end.value()();
+        }
+    }
+
+    template
+    <typename Fn>
+    static void getHemiSplat(
+        Fn fn, RgbImage& image,
         int spp_sqrt=1,
         std::optional<std::function<void()>>&& begin = std::nullopt,
         std::optional<std::function<void()>>&& end = std::nullopt
@@ -89,23 +143,22 @@ public:
         for(int i = 0; i<image.res.x; i++){
             RandomSampler s(i);
             for(int j = 0; j<image.res.y; j++){
-                Vec3 acc(0.0);
                 for(int k = 0; k<spp_sqrt; k++){
                     for(int l=0; l<spp_sqrt; l++){
-                        Vec2 disp = {k+s.sample(), j+s.sample()};
-                        disp = disp*(1.0/spp_sqrt);
-                        Vec2 coords = {
-                                (float(i)+disp.x)/float(image.res.x) * 2.0f -1.0f,
-                                (float(j)+disp.y)/float(image.res.y) * 2.0f -1.0f
-                        };
+                        coords = fn(col,s);
+                        col = col/(spp_sqrt*spp_sqrt);
+                        Vec3* pix = *(image.get_pixel(i,j));
 
-                        acc = acc + fn(coords)/(spp_sqrt*spp_sqrt);
+                        #pragma omp atomic
+                        pix.x += col.x;
+                        #pragma omp atomic
+                        pix.y += col.y;
+                        #pragma omp atomic
+                        pix.z += col.z;
 
                     }
 
                 }
-
-                *(image.get_pixel(i,j)) = acc;
 
 
             }

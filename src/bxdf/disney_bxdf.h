@@ -10,7 +10,7 @@
 
 namespace cpppt{
 
-float fresnel_schlick(float r0, float cos_h){
+inline float fresnel_schlick(float r0, float cos_h){
     if(r0 == 0.0){
         return 0.0;
     }
@@ -19,11 +19,11 @@ float fresnel_schlick(float r0, float cos_h){
     return r0 + (1.0-r0)*tmp2*tmp2*tmp;
 }
 
-Vec3 compute_halfway_vector(Vec3 wo, Vec3 wi){
+inline Vec3 compute_halfway_vector(Vec3 wo, Vec3 wi){
     return normalized(wo+wi);
 }
 
-float ior2spec(float ior){
+inline float ior2spec(float ior){
     float a = ior-1;
     float b = ior+1;
     a = a/b;

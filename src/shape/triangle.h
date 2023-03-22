@@ -15,6 +15,57 @@ namespace cpppt {
         public:
         Triangle(const Mesh* mesh, int id): mesh(mesh),id(id){
         }
+
+        void fill_intersection_from_barycentric(const Vec3& bary, Intersection* it) const {
+
+            Vec3 a,b,c;
+            std::array<int,3> tri =  mesh->get_triangle(id);
+            a = mesh->get_vertex(tri[0]);
+            b = mesh->get_vertex(tri[1]);
+            c = mesh->get_vertex(tri[2]);
+
+            float alpha = bary.x;
+            float beta = bary.y;
+            float gamma = bary.z;
+
+
+
+            Vec2 uv(0.0,0.0);
+
+            Vec3 normal;
+
+            {
+                Vec3 n1 = mesh->get_normal(tri[0]);
+                Vec3 n2 = mesh->get_normal(tri[1]);
+                Vec3 n3 = mesh->get_normal(tri[2]);
+                normal = normalized(n1*alpha + n2*beta + n3*gamma);
+            }
+
+            if(mesh->has_uv()){
+                Vec2 uv1 = mesh->get_uv(tri[0]);
+                Vec2 uv2 = mesh->get_uv(tri[1]);
+                Vec2 uv3 = mesh->get_uv(tri[2]);
+                uv = uv1*alpha + uv2*beta + uv3*gamma;
+            }
+
+            Vec3 bitangent(1.0,0.0,0.0);
+
+            if(mesh->use_bitangents()){
+                Vec3 t1 = mesh->get_bitangent(tri[0]);
+                Vec3 t2 = mesh->get_bitangent(tri[1]);
+                Vec3 t3 = mesh->get_bitangent(tri[2]);
+                bitangent = normalized(t1*alpha+t2*beta+t3*gamma);
+            }
+
+
+            it->normal = normal;
+            it->g_normal = normalized(cross(b-a,c-a));
+            it->bitangent = bitangent;
+            it->tangent = normalized(cross(bitangent,normal));
+            it->texture_coords = Vec3(uv.x,uv.y,0.0);
+
+        }
+
         bool intersect(Ray& r, Intersection* it) const {
             Vec3 a,b,c;
             std::array<int,3> tri =  mesh->get_triangle(id);
@@ -75,42 +126,9 @@ namespace cpppt {
             if(alpha<0 || alpha > 1 || beta<0 || beta>1 || gamma<0 || gamma>1){
                 return false;
             }
-
-            Vec2 uv(0.0,0.0);
-
-            Vec3 normal;
-
-            {
-                Vec3 n1 = mesh->get_normal(tri[0]);
-                Vec3 n2 = mesh->get_normal(tri[1]);
-                Vec3 n3 = mesh->get_normal(tri[2]);
-                normal = normalized(n1*alpha + n2*beta + n3*gamma);
-            }
-
-            if(mesh->has_uv()){
-                Vec2 uv1 = mesh->get_uv(tri[0]);
-                Vec2 uv2 = mesh->get_uv(tri[1]);
-                Vec2 uv3 = mesh->get_uv(tri[2]);
-                uv = uv1*alpha + uv2*beta + uv3*gamma;
-            }
-
-            Vec3 bitangent(1.0,0.0,0.0);
-
-            if(mesh->use_bitangents()){
-                Vec3 t1 = mesh->get_bitangent(tri[0]);
-                Vec3 t2 = mesh->get_bitangent(tri[1]);
-                Vec3 t3 = mesh->get_bitangent(tri[2]);
-                bitangent = normalized(t1*alpha+t2*beta+t3*gamma);
-            }
-
             r.max_t = t;
-
-            it->normal = normal;
-            it->g_normal = normalized(cross(b-a,c-a));
-            it->bitangent = bitangent;
-            it->tangent = normalized(cross(bitangent,normal));
             it->hitpoint = r.o+r.d*t;
-            it->texture_coords = Vec3(uv.x,uv.y,0.0);
+            fill_intersection_from_barycentric({alpha,beta,gamma},it);
             return true;
 
         }

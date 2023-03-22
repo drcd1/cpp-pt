@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <renderer/renderer.h>
 #include <renderer/pathtracer.h>
+#include <renderer/pure_pt.h>
 #include <renderer/pathtracerMIS.h>
 #include <renderer/lighttracer.h>
 #include <renderer/debug_renderer.h>
@@ -40,7 +41,7 @@ public:
 struct RendererRegistry{
     std::vector<std::unique_ptr<AbstractFactory>> factories;
     std::vector<const char*> names;
-    std::unordered_map<const char*, size_t> id;
+    std::unordered_map<std::string, size_t> id;
 
 
     template
@@ -48,10 +49,10 @@ struct RendererRegistry{
     void reg(){
         names.push_back(T::name());
         factories.push_back(std::make_unique<RendererFactory<T>>());
-        id.insert({T::name(), names.size()-1});
+        id.insert({std::string(T::name()), names.size()-1});
     }
 
-    std::shared_ptr<Renderer> create(const char* name, const RenderSettings& rs){
+    std::shared_ptr<Renderer> create(const std::string& name, const RenderSettings& rs){
         return create(id[name], rs);
     }
     std::shared_ptr<Renderer> create(int i,const RenderSettings& rs){
@@ -73,6 +74,7 @@ struct RendererRegistry{
         reg<LighttracerMLT>();
         reg<PhotonMapping>();
         reg<PPG>();
+        reg<PurePt>();
     }
 
     private:

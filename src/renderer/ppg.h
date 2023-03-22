@@ -12,6 +12,7 @@
 #include <math/sampler.h>
 #include <omp.h>
 #include <iostream>
+#include <memory>
 
 namespace cpppt{
 
@@ -19,7 +20,7 @@ namespace cpppt{
 class PPG : public Renderer{
     int samples;
 
-    SDTree* st;
+    std::shared_ptr<SDTree> st=nullptr;
 
     Vec3 render_sky(const Ray& r, const Scene& s) const {
         if(s.light->is_infinite_not_delta()){
@@ -42,8 +43,8 @@ class PPG : public Renderer{
     float rF(const Vec3& radiance) const {
         return std::max(radiance.x,std::max(radiance.y,radiance.z));
     }
-    Vec3 integrate(const Scene& scene, const Vec2& coords, Sampler& sampler) {
-        Ray ray = scene.camera->get_ray(coords);
+    Vec3 integrate(const Scene& scene, const Ray& r2, Sampler& sampler) {
+        Ray ray(r2);
         Intersection intersection;
         Intersection prev_intersection;
         Vec3 col(0.0);
@@ -155,35 +156,50 @@ class PPG : public Renderer{
 public:
     PPG(const RenderSettings& rs): samples(rs.spp), st(nullptr){}
 
-    float getFullPdf(Scene& sc, Intersection& it, Ray& r){
+    float getFullPdf(const Scene& sc, const Intersection& it, const Vec2& coords){
         return 0.0f;
     }
 
-    float getGuidingPdf(Scene& sc, Intersection& it, Ray& r){
-        return 0.0f;
+    float getGuidingPdf(const Scene& sc, const Intersection& it, const Vec2& coords){
+        Ray r;
+        r.o=it.hitpoint;
+        if(! Renderer::toHemiDirection(coords,it,r)==0)
+            return (0.0);
+        return st->pdf(r.o,r.d);
     }
 
-
-    Vec3 getBxDFPdf(Scene& sc, Intersection& it, Ray& r){
+    Vec3 getBxDFPdf(const Scene& sc, const Intersection& it,const Vec2& coords){
         return Vec3(0.0f);
     }
 
-    Vec3 getGuidingSample(Scene& sc, Intersection& it, Sampler& s){
+    Vec3 getGuidingSample(const Scene& sc, const Intersection& it, Sampler& s){
         return Vec3(0.0f);
     }
 
-    Vec3 getBxDFSample(Scene& sc, Intersection& it, Ray& r, Sampler& s){
+    Vec3 getBxDFSample(const Scene& sc, const Intersection& it, Sampler& s){
         return Vec3(0.0f);
     }
 
-
-
-    Vec3 getFullSample(Scene& sc, Intersection& it, Sampler& s){
+    Vec3 getFullSample(const Scene& sc, const Intersection& it, Sampler& s){
         return Vec3(0.0f);
+    }
+
+    Vec3 getRadiance(const Scene& sc, const Intersection& it, const Vec2& coords, Sampler& s){
+        Ray r;
+        r.o=it.hitpoint;
+        if(! Renderer::toHemiDirection(coords,it,r)==0)
+            return Vec3(0.0);
+        else
+            return integrate(sc,r,s);
     }
 
     void render(Scene& sc, std::string filename) {
-        st = new SDTree({sc.primitive->get_bounds().min,sc.primitive->get_bounds().max});
+        st = std::make_shared<SDTree>(
+            Bounds<Vec3>(
+                sc.primitive->get_bounds().min,
+                sc.primitive->get_bounds().max
+            )
+        );
         RgbImage* image= &(sc.camera->get_image());
         Vec2i res = image->res;
         int total_samples = samples*samples;
@@ -221,7 +237,7 @@ public:
                         float r2 = s.sample();
 
                         Vector2<float> coords( ((float(i)+r1)/float(res.x))*2.0-1.0, -(((float(j)+r2)/float(res.y))*2.0-1.0));
-                        acc = acc +integrate(sc, coords, s);
+                        acc = acc +integrate(sc, sc.camera->get_ray(coords), s);
 
 
                     }
@@ -248,9 +264,6 @@ public:
             image->save(filename);
             st->update();
         }
-
-        delete st;
-
     }
     static const char* name(){
         return "PPG";

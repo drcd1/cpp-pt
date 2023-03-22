@@ -1,21 +1,25 @@
 
-#VULKAN_DIR = r"D:\cpp_libs\VulkanSDK\1.2.170.0"
-#GLFW_DIR = r"D:\cpp_libs\glfw-3.3.4.bin.WIN64"
-#GLM_DIR = r"D:\cpp_libs\glm-0.9.9.8\glm"
-#STB_DIR = r"D:\cpp_libs\stb"
-#GLFW_LIB_DIR = "lib-vc2019"
-#IMGUI_DIR = r"D:\cpp_libs\imgui"
-#VICKYR_DIR = r"D:\VickyR"
+VULKAN_DIR = r"D:\cpp_libs\VulkanSDK\1.2.170.0"
+GLFW_DIR = r"D:\cpp_libs\glfw-3.3.4.bin.WIN64"
+GLM_DIR = r"D:\cpp_libs\glm-0.9.9.8\glm"
+STB_DIR = r"D:\cpp_libs\stb"
+GLFW_LIB_DIR = "lib-vc2019"
+IMGUI_DIR = r"D:\cpp_libs\imgui"
+VICKYR_DIR = r"D:\VickyR/"
+EMBREE_DIR = r"D:\cpp_libs\embree-4.0.1.x64.windows"
 
-VULKAN_DIR = r""
-GLFW_DIR = r""
-GLM_DIR = r""
-STB_DIR = r"/home/duarte/stb/"
-IMGUI_DIR = r"/home/duarte/cpplibs/imgui"
-GLFW_LIB_DIR = ""
-VICKYR_DIR = r"/home/duarte/VickyR"
+
+#VULKAN_DIR = r""
+#GLFW_DIR = r""
+#GLM_DIR = r""
+#STB_DIR = r"/home/duarte/stb/"
+#IMGUI_DIR = r"/home/duarte/cpplibs/imgui"
+#GLFW_LIB_DIR = ""
+#VICKYR_DIR = r"/home/duarte/VickyR/"
+#EMBREE_DIR = r"D:\cpp_libs\embree-4.0.1.x64.windows"
 
 import os
+import re
 include_dir = ['src']
 
 include_dir = ["src"]
@@ -26,8 +30,13 @@ if(VULKAN_DIR!=""):
     include_dir += [os.path.join(VULKAN_DIR,"include")]
     lib_dir+=[os.path.join(VULKAN_DIR,"lib")]
 
+if(EMBREE_DIR!=""):
+    include_dir += [os.path.join(EMBREE_DIR,"include")]
+    lib_dir+=[os.path.join(EMBREE_DIR,"lib")]
+
+
 if(GLFW_DIR!=""):
-    include_dir += os.path.join(GLFW_DIR,"include")
+    include_dir += [os.path.join(GLFW_DIR,"include")]
     lib_dir += [os.path.join(GLFW_DIR,GLFW_LIB_DIR)]
 
 if(GLM_DIR!=""):
@@ -45,12 +54,13 @@ debug = ARGUMENTS.get('debug', 0)
 no_gui = ARGUMENTS.get('no_gui', 0)
 platform = ARGUMENTS.get('OS', Platform())
 
+print("PLatform is ",platform)
 
-if(platform=="win32"):
+if(platform.name=="win32"):
     libs = ["vulkan-1","glfw3","gdi32"]
 
 #if using windows
-if(platform == "win32"):
+if(platform.name=="win32"):
     windows_libs = [
     "kernel32.lib",
     "user32.lib",
@@ -63,10 +73,12 @@ if(platform == "win32"):
     "oleaut32.lib",
     "uuid.lib",
     "odbc32.lib",
-    "odbccp32.lib"
+    "odbccp32.lib",
+    "embree4.lib",
+    "tbb.lib"
     ]
     libs = libs+windows_libs
-else: #linux 
+else: #linux
     libs = ["glfw","vulkan","dl","pthread","X11","Xxf86vm","Xrandr","Xi"]
 
 env = Environment(Platfor=platform)
@@ -75,13 +87,13 @@ env.Append(CPPPATH=include_dir)
 env.Append(LIBPATH=lib_dir)
 env.Append(LIBS = libs)
 
-if(platform=="win32"):
+if(platform.name=="win32"):
     env.Append(CCFLAGS = ['/EHsc','/openmp', '/MD' ,'/std:c++17'])
 else : #linux :
     env.Append(LINKFLAGS=["-fopenmp"])
     env.Append(CCFLAGS= ['-std=c++17','-fopenmp' ])
 
-if(platform=="win32"):
+if(platform.name=="win32"):
     if int(debug):
         print("debug build!");
         env.Append(PDB = 'debug/main.pdb')
@@ -94,7 +106,6 @@ else :#linux:
         env.Append(CCFLAGS='-g')
     else:
         env.Append(CCFLAGS = '-O2')
-    
 
 
 
@@ -102,7 +113,6 @@ else :#linux:
 
 
 
-source_files = ["src/main.cpp","src/debug_tools/app.cpp"]
 
 
 env.Append(LIBPATH=lib_dir)
@@ -116,6 +126,15 @@ lib_source_files = [os.path.join(IMGUI_DIR,"backends/imgui_impl_glfw.cpp"),
                     os.path.join(IMGUI_DIR,"imgui_tables.cpp"),
                     os.path.join(IMGUI_DIR,"imgui_widgets.cpp")]
 if(not int(no_gui)):
-    env.Append(CPPDEFINES=['USE_GUI'])
+    vd_def = ("VICKYR_DIR=\\\""+re.escape(re.escape(VICKYR_DIR+"build/"))+"\\\"")
+    print(vd_def)
+    env.Append(CPPDEFINES=['USE_GUI',vd_def])
 
-env.Program("build/renderer",source_files + lib_source_files)
+
+source_files = ["src/main.cpp","src/debug_tools/app.cpp"]
+#source_no_gui= ["src/main.cpp"]
+
+if(not int(no_gui)):
+    source_files += lib_source_files
+
+env.Program("build/renderer",source_files)

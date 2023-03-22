@@ -16,6 +16,7 @@
 #include <renderer/vcm.h>
 #include <primitive/simple_group.h>
 #include <primitive/bvh.h>
+#include <primitive/embree.h>
 #include <shape/mesh.h>
 #include <shape/triangle.h>
 #include <primitive/primitive_leaf.h>
@@ -35,6 +36,11 @@
 #include <shape/shape.h>
 #include <scene.h>
 #include <chrono>
+
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image.h>
+#include <stb_image_write.h>
 
 //NOTE: sometimes, sample is not zero, but prob is zero?!
 //I think we are dealing with this in the renderer by discarding invalid samples

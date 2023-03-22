@@ -18,9 +18,10 @@ struct Bounds{
     T center(){
         return (min+max)*0.5;
     }
+    Bounds():min(10e6),max(-10e6){}
+    Bounds(const T& a, const T& b):min(a),max(b){}
 };
 
-int global_count = 0;
 
 
 
@@ -131,7 +132,7 @@ public:
         Vec2 begin;
         Vec2 size;
     };
-    std::vector<Leaf> leaves;
+    std::vector<Leaf> leaves = std::vector<Leaf>();
 
     template <typename DLeafFunction>
     void iterate_leaves(DLeafFunction dlf){
@@ -435,7 +436,7 @@ public:
     }
 
 
-    SDTree(Bounds<Vec3> spatial_bounds): spatial_bounds(spatial_bounds),
+    SDTree(const Bounds<Vec3>& spatial_bounds): spatial_bounds(spatial_bounds),
     root(std::make_unique<DTree>())
     {
 

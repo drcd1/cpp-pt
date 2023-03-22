@@ -19,7 +19,7 @@ struct BVHNode: public Primitive{
 
     }
 
-    virtual bool intersect(Ray& r, Intersection* is) const {
+    bool intersect(Ray& r, Intersection* is) const {
         if(!aabb.intersect_any(r))
             return false;
 
@@ -35,12 +35,12 @@ struct BVHNode: public Primitive{
 
         return tmp | intersected;
     }
-    virtual bool intersect_any(Ray& r) const {
+    bool intersect_any(Ray& r) const {
         if(!aabb.intersect_any(r))
             return false;
         return right->intersect_any(r) || left->intersect_any(r);
     }
-    virtual AABB get_bounds() const {
+    AABB get_bounds() const {
         return aabb;
     }
 };

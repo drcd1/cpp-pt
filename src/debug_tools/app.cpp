@@ -1,4 +1,4 @@
-
+#ifdef USE_GUI
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -22,7 +22,12 @@ void mouseButtonCallback(GLFWwindow* window,int button, int action, int mods){
 		g_r_ptr->resetMouse();
 		if (glfwRawMouseMotionSupported())
     		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-	}
+	} else if(
+	 button==GLFW_MOUSE_BUTTON_RIGHT &&
+	 action==GLFW_PRESS &&
+	 glfwGetInputMode(window,GLFW_CURSOR)==GLFW_CURSOR_NORMAL){
+		g_r_ptr->storeIntersection();
+	 }
 }
 
 void keyCallback(GLFWwindow* window,int button, int scancode, int action, int mods){
@@ -220,3 +225,4 @@ int main(){
     });
     renderer.cleanup();
 }
+#endif

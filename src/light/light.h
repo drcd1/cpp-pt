@@ -19,8 +19,8 @@ struct LightSample
     Vec3 position;
     Vec3 intensity;
     Vec3 normal;
-    bool delta;
-    bool infinite;
+    bool delta=false;
+    bool infinite=false;
     const Light* ref;
 };
 

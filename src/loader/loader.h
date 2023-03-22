@@ -11,8 +11,10 @@
 #include <light/shape_light.h>
 #include <shape/triangle.h>
 #include <fstream>
-#include <sstream>
 #include <string>
+#include <primitive/bvh.h>
+#include <primitive/embree.h>
+#include <sstream>
 #include <unordered_map>
 #include <texture/image_texture.h>
 #include <image/rgb_image.h>
@@ -294,8 +296,27 @@ namespace Loader{
             if(type == "renderer"){
                 std::string rtype;
                 iss>>rtype;
+                std::cout<<"rend id = "<<RendererRegistry::get()->id[rtype]<<std::endl;
+               /*
+               if(RendererRegistry::get()->id[rtype]== 0 || RendererRegistry::get()->id.find(rtype)==RendererRegistry::get()->id.end()){
+                    std::cout<<"WHAAAAAAT"<<std::endl;
 
-                rs->renderer = RendererRegistry::get()->id[rtype.c_str()];
+                    for(auto a = RendererRegistry::get()->id.begin();
+                        a!=RendererRegistry::get()->id.end();
+                        a++){
+
+                        std::string td = (a->first!=rtype)?("Different"):("Same");
+
+                        std::cout<<a->first<<" : "<<rtype<<" ARE "<<
+                        td
+                        <<std::endl;
+
+                    }
+                }
+                */
+
+
+                rs->renderer = RendererRegistry::get()->id[rtype];
                 //todo: catch error
             } else if (type == "spp") {
                 iss>>rs->spp;
@@ -305,6 +326,16 @@ namespace Loader{
                 iss>>rs->scene_name;
             } else if (type == "output") {
                 iss>>rs->output_name;
+            } else if (type == "rt_engine") {
+                std::string o;
+                iss>>o;
+                if(o =="bvh"){
+                    rs->rt_engine=RenderSettings::RT_ENGINE::BVH;
+                } else if(o=="embree"){
+                    rs->rt_engine=RenderSettings::RT_ENGINE::EMBREE;
+                } else {
+                    throw(std::runtime_error("Unknown rt core: "+o));
+                }
             } else if (type!="") {
                 throw std::runtime_error("Unknown render setting: " + type);
             }
@@ -322,8 +353,7 @@ namespace Loader{
         RenderSettings* rs,
         std::string filename){
 
-
-        s->primitive = std::make_shared<BVH>();
+        s->primitive = nullptr;
         s->light = nullptr;
         auto dir_file = split_filename(filename);
         LoaderData ld;
@@ -359,14 +389,20 @@ namespace Loader{
             }
         }
 
+        std::shared_ptr<BVH> bvh = std::make_shared<BVH>();
+        std::vector<std::shared_ptr<PrimitiveLeaf>> primitives;
+
         for(int i = 0; i<sd->meshes.size(); i++){
             for(int j = 0; j<sd->meshes.at(i)->n_triangles(); j++){
                 auto helper = std::make_shared<PrimitiveLeaf>(
                     std::make_shared<Triangle>(sd->meshes.at(i).get(),j),
                     sd->materials.at(i)
                 );
-
-                s->primitive->add(helper);
+                if(rs->rt_engine==RenderSettings::RT_ENGINE::BVH){
+                    bvh->add(helper);
+                } else {
+                    primitives.push_back(helper);
+                }
 
                 if(sd->materials.at(i)->is_emissive()){
                     ld.lg->add(std::make_shared<ShapeLight>(helper));
@@ -374,11 +410,17 @@ namespace Loader{
 
             }
         }
+
         std::cout<<"Done loading..."<<std::endl;
 
         std::cout<<"building accel..."<<std::endl;
-
-        s->primitive->build();
+        if(rs->rt_engine==RenderSettings::RT_ENGINE::BVH){
+            std::cout<<"building bvh..."<<std::endl;
+            bvh->build();
+            s->primitive = bvh;
+        } else {
+            s->primitive = std::make_shared<Embree>(*sd, std::move(primitives));
+        }
         std::shared_ptr<EnvironmentLight> env_l = nullptr;
         if(ld.env != nullptr){
             env_l = std::make_shared<EnvironmentLight>(

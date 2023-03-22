@@ -158,6 +158,7 @@ class Image{
 public:
 
     ImageDef::Border border = ImageDef::REPEAT;
+    Image(const Image& im) = default;
 
     Image(Vec2i res): pixels(res.x*res.y), res(res){}
 
@@ -300,6 +301,8 @@ public:
     }
 
     void save(std::string filename, ImageDef::COLOR_SPACE is = ImageDef::SRGB){
+        std::cout<<"saving "<<filename<<std::endl;
+
         {
             std::vector<unsigned char> data(res.x*res.y*3);
 

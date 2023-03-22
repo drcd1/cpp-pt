@@ -113,7 +113,7 @@ public:
     }
 
     static const char* name(){
-        return "Naive Pathtracing";
+        return "NaivePathtracing";
     }
 };
 }
