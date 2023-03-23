@@ -18,6 +18,8 @@
 #include <debug_tools/gui/clock.h>
 #include <debug_tools/gui/scene.h>
 #include <camera/camera_perspective.h>
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
 
 #define MAX_CHARS 128
 
@@ -145,7 +147,6 @@ class RendererGUI{
     RenderProgress status;
     //these vars are shared, but atomic
     std::atomic<Task::Name> current_task=Task::Name::NONE;
-    std::atomic<bool> reloadScene = false;
     std::atomic<bool> sceneUpToDate = false;
     RenderMessengerGUI messenger;
 
@@ -247,7 +248,7 @@ public:
     }
 
     void mat2str(char* str,const glm::mat4& m4 ){
-        sprintf(str, "%2.2f %2.2f %2.2f %2.2f\n%2.2f %2.2f %2.2f %2.2f\n%2.2f %2.2f %2.2f %2.2f\n%2.2f %2.2f %2.2f %2.2f\n",
+        snprintf(str,2*MAX_CHARS, "%2.2f %2.2f %2.2f %2.2f\n%2.2f %2.2f %2.2f %2.2f\n%2.2f %2.2f %2.2f %2.2f\n%2.2f %2.2f %2.2f %2.2f\n",
         m4[0][0],m4[1][0],m4[2][0],m4[3][0],
         m4[0][1],m4[1][1],m4[2][1],m4[3][1],
         m4[0][2],m4[1][2],m4[2][2],m4[3][2],
@@ -326,19 +327,6 @@ public:
 
         unqueueAndRunTasks();
 
-        //if no tasks are running
-        if(reloadScene && current_task==Task::Name::NONE){
-            loadSceneToRenderer();
-            reloadScene = false;
-        }
-
-        if(tasks.size()==0){
-            if(sv.load_render){
-                load_render();
-            }
-
-            sv.load_render = false;
-        }
 
         ImGui::Begin("Render Result");
 
@@ -486,7 +474,7 @@ private:
     void intersectionResult(){
         if(testIntersection!=nullptr){
             ImGui::Text("Current Intersection: ");
-            sprintf(intersectionMessage,"x: %f y:%f z:%f", testIntersection->hitpoint.x,
+            snprintf(intersectionMessage,MAX_CHARS,"x: %f y:%f z:%f", testIntersection->hitpoint.x,
             testIntersection->hitpoint.y,
             testIntersection->hitpoint.z);
             ImGui::Text(intersectionMessage);
@@ -504,13 +492,14 @@ private:
             testIntersection = nullptr;
             sv.rs.scene_name = std::string(sceneGUI.scene_filename);
             tasks.push({
-
                 [&](){
                     load();
                     sceneUpToDate = true;
-                    reloadScene = true;
                 },
-                Task::Name::LOADING
+                Task::Name::LOADING,
+                [&](){
+                    loadSceneToRenderer();
+                }
             });
 
         }
@@ -573,6 +562,7 @@ private:
 
         try{
             //TODO: waht about no scene?
+            //OR NO CAMERA?
             auto c = std::dynamic_pointer_cast<CameraPerspective>(sv.scene.camera);
 
             Vec3 r = c->getCoords().col(0);
@@ -642,8 +632,8 @@ private:
 
             ImGui::ProgressBar(status.percentage);
             ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-            char buf[32];
-            sprintf(buf, "Task %02d/%02d",status.current_task, status.total_tasks);
+            char buf[MAX_CHARS];
+            snprintf(buf,MAX_CHARS, "Task %02d/%02d",status.current_task, status.total_tasks);
             //std::cout<<buf<<" "<<status.percentage<<" "<<status.task_description<<std::endl;
 
             ImGui::Text(buf);
@@ -700,9 +690,11 @@ private:
             //global var access
             sv.renderer->setRendererMessenger(&messenger);
             sv.renderer->renderW(sv.scene, sv.rs.output_name);
-            sv.load_render = true;
             },
-            Task::Name::LOADING
+            Task::Name::LOADING,
+            [&](){
+                load_render();
+            }
         });
     }
     void load(){
