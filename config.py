@@ -1,0 +1,18 @@
+VULKAN_DIR = r"D:\cpp_libs\VulkanSDK\1.2.170.0"
+GLFW_DIR = r"D:\cpp_libs\glfw-3.3.4.bin.WIN64"
+GLM_DIR = r"D:\cpp_libs\glm-0.9.9.8\glm"
+STB_DIR = r"D:\cpp_libs\stb"
+GLFW_LIB_DIR = "lib-vc2019"
+IMGUI_DIR = r"D:\cpp_libs\imgui"
+VICKYR_DIR = r"D:\VickyR/"
+EMBREE_DIR = r"D:\cpp_libs\embree-4.0.1.x64.windows"
+
+
+#VULKAN_DIR = r""
+#GLFW_DIR = r""
+#GLM_DIR = r""
+#STB_DIR = r"/home/duarte/stb/"
+#IMGUI_DIR = r"/home/duarte/cpplibs/imgui"
+#GLFW_LIB_DIR = ""
+#VICKYR_DIR = r"/home/duarte/VickyR/"
+#EMBREE_DIR = r"D:\cpp_libs\embree-4.0.1.x64.windows"

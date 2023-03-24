@@ -1,6 +1,6 @@
-renderer PathtracerMLT
+renderer PathtracerMIS
 resolution 512 512
-spp 20
+spp 10
 scene ..\\scenes\\water\\scene.ptscene
 output renders/test_embree
 rt_engine embree
