@@ -125,6 +125,7 @@ public:
         }
     }
 
+/*
     template
     <typename Fn>
     static void getHemiSplat(
@@ -168,6 +169,7 @@ public:
             end.value()();
         }
     }
+    */
 
 
 

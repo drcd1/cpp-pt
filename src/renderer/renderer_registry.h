@@ -16,7 +16,7 @@
 #include <renderer/lighttracerMLT.h>
 #include <renderer/photonmapping.h>
 #include <renderer/ppg.h>
-#include <renderer/VCM.h>
+//#include <renderer/vcm.h>
 
 
 

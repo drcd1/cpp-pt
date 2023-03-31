@@ -91,7 +91,7 @@ public:
 
         for(int i = 0; i<sd.meshes.size(); i++){
             for(int j = 0; j<sd.meshes.at(i)->n_vertices();j++){
-                auto& v = sd.meshes.at(i)->get_vertex(j);
+                const auto& v = sd.meshes.at(i)->get_vertex(j);
                 vb[(j+tv)*3]=v.x;
                 vb[(j+tv)*3+1]=v.y;
                 vb[(j+tv)*3+2]=v.z;
@@ -102,7 +102,7 @@ public:
 
 
             for(int j = 0; j<sd.meshes.at(i)->n_triangles();j++){
-                auto& v = sd.meshes.at(i)->get_triangle(j);
+                const auto& v = sd.meshes.at(i)->get_triangle(j);
                 ib[(j+tf)*3]=v[0]+tv;
                 ib[(j+tf)*3+1]=v[1]+tv;
                 ib[(j+tf)*3+2]=v[2]+tv;

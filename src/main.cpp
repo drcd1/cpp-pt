@@ -3,8 +3,8 @@
 #include <camera/camera_perspective.h>
 #include <renderer/dummy_renderer.h>
 #include <renderer/debug_renderer.h>
-#include <renderer/Pathtracer.h>
-#include <renderer/Lighttracer.h>
+#include <renderer/pathtracer.h>
+#include <renderer/lighttracer.h>
 #include <renderer/pathtracerMLT.h>
 #include <renderer/pathtracerMIS.h>
 #include <renderer/lighttracerMLT.h>
@@ -13,7 +13,7 @@
 #include <renderer/ppg.h>
 #include <renderer/ppg_lt.h>
 #include <renderer/ppg_nee.h>
-#include <renderer/vcm.h>
+//#include <renderer/vcm.h>
 #include <primitive/simple_group.h>
 #include <primitive/bvh.h>
 #include <primitive/embree.h>
