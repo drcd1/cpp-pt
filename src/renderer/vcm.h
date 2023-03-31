@@ -23,9 +23,55 @@
 namespace cpppt{
 class VCM : public Renderer{
 
-    float testDL(){
+
+    bool testDL(){
+        //create simple path
+        //create the path with: LT, PT and VC
+        //check if probs computed are the same
+        //weights are the same
+        //they sum to one
+
+        LightPath lp;
+        LightPath cp;
+
+        Intersection vc;
+        Intersection vmid;
+        Intersection vl;
+
+        vc.hitpoint = Vec3(0.f,0.f,0.f);
+        vmid.hitpoint = Vec3(0.0f,2.0f, -1.0f);
+        vmid.g_normal = Vec3(0.0f,0.0f,1.0f);
+        vl.hitpoint = Vec3(0.0f,0.0f,1.0f);
+        vl.g_normal = Vec3(0.0f,-1.0f,0.0f);
+        {
+
+        LightPathVertex v1;
+        LightPathVertex v2;
+        LightPathVertex v3;
+
+        lp.push_back(v1);
+        lp.push_back(v2);
+        lp.push_back(v3);
+
+        }
+
+        {
+
+        LightPathVertex v1;
+        LightPathVertex v2;
+        LightPathVertex v3;
+
+        lp.push_back(v1);
+        lp.push_back(v2);
+        lp.push_back(v3);
+
+        }
+
+
+
 
     }
+
 
     float compute_area_pdf(const LightPathVertex& v, const LightPathVertex& v_from, const Vec3& from_from, bool transposed){
         //TODO: account for transposed
