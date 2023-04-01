@@ -167,8 +167,8 @@ if(platform.name=="win32"):
     libs_tools += windows_libs
     libs_min += ["embree4.lib","tbb.lib"]
 else: #linux
-    libs_tools += ["glfw","vulkan","dl","pthread","X11","Xxf86vm","Xrandr","Xi"]
-    libs_min += ["pthread"]
+    libs_tools += ["glfw","vulkan","dl","X11","Xxf86vm","Xrandr","Xi"]
+    libs += ["pthread","embree4","tbb"]
 
 
 

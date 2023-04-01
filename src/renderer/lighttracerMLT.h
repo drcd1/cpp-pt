@@ -94,6 +94,9 @@ class LighttracerMLT: public Renderer{
                 break;
             } else {
                 auto bsdf = intersection.get_bxdf();
+                if(bsdf->is_emitter()){
+                    break;
+                }
 
                 DirectionalSample sample = bsdf->sample(sampler, ray.d*(-1.0), intersection);
 
@@ -120,6 +123,9 @@ class LighttracerMLT: public Renderer{
                         ) * fabs(dot(ray.d,intersection.normal)/dot(ray.d,intersection.g_normal));
 
                         //color = color/ dot(shadow_ray.d, intersection.normal);
+                        if(std::isnan(color.x)||std::isnan(color.y)||std::isnan(color.z)){
+                            throw(std::runtime_error("We have nans!"));
+                        }
                         color = color*cc.factor;
                         ret.push_back(RadianceSample(cc.i,cc.j,color));
                         /*
@@ -165,7 +171,9 @@ class LighttracerMLT: public Renderer{
     void add_image(RgbImage* im, int i, int j, Vec3 toAdd) const {
         Vec3* px = im->get_pixel(i,j);
                         //*px = Vec3(1.0,0.0,1.0);
-
+        if(std::isnan(toAdd.x)||std::isnan(toAdd.y)||std::isnan(toAdd.z)){
+            throw std::runtime_error("MORE NANS?!!");
+        }
         #pragma omp atomic
         (*px).x += toAdd.x;
         #pragma omp atomic
@@ -221,6 +229,9 @@ public:
             mlts.set_sample(record[j]);
             auto value = values[j];
             float v = rF(value);
+            if(v <= 1e-8)
+                v=1e-8;
+                
             float weight = float(1.0/(mChains*nMutations));
             for(int k = 1; k<nMutations; k++){
                 mlts.mutate();
@@ -231,23 +242,34 @@ public:
                 float new_v = rF(new_value);
                 float alpha = new_v/v;
 
-                if(new_v == 0.0){
-                    alpha = 0.0;
-                    new_v = 1.0;
+                if(std::isnan(cdf.back()/v)||std::isnan(cdf.back()/new_v)){
+                    throw(std::runtime_error("We have nans?!"));
                 }
+
+                float f1 = cdf.back()/v;
+                float f2 = cdf.back()/new_v;
+                if(v<1e-5){
+                    f1 = 0.0;
+                }
+                if(new_v <1e-5){
+                    alpha = 0.0;
+                    f2 = 0.0;
+                    new_v = 1e-8;
+                }
+
                 if(alpha>1.0){
                     v = new_v;
                     value = new_value;
                     mlts.accept();
                     for(auto rs: value){
-                        add_image(image, rs.i,rs.j,rs.radiance*(cdf.back()/v)*weight);
+                        add_image(image, rs.i,rs.j,rs.radiance*(f1)*weight);
                     }
                 } else {
                     for(auto rs: value){
-                        add_image(image, rs.i,rs.j,rs.radiance*(cdf.back()/v)*weight);
+                        add_image(image, rs.i,rs.j,rs.radiance*(f1)*weight);
                     }
                     for(auto rs: new_value){
-                        add_image(image, rs.i,rs.j,rs.radiance*(cdf.back()/new_v)*weight);
+                        add_image(image, rs.i,rs.j,rs.radiance*(f2)*weight);
                     }
                     float r1 = s.sample();
                     if(r1<alpha){
