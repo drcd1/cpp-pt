@@ -13,6 +13,7 @@
 #include <renderer/lighttracer.h>
 #include <renderer/debug_renderer.h>
 #include <renderer/pathtracerMLT.h>
+#include <renderer/pathtracerMLT_MIS.h>
 #include <renderer/lighttracerMLT.h>
 #include <renderer/photonmapping.h>
 #include <renderer/ppg.h>
@@ -75,6 +76,7 @@ struct RendererRegistry{
         reg<PhotonMapping>();
         reg<PPG>();
         reg<PurePt>();
+        reg<PathtracerMLT_MIS>();
     }
 
     private:
