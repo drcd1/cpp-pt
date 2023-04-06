@@ -71,7 +71,7 @@ class Lighttracer : public Renderer{
                             normalized(ray.d*(-1.0)),
                             normalized(shadow_ray.d),
                             intersection
-                        ) * factor * correcting_factor * fabs(dot(intersection.g_normal,shadow_ray.d)) / fabs(dot(intersection.normal,shadow_ray.d));
+                        ) * factor;// * correcting_factor * fabs(dot(intersection.g_normal,shadow_ray.d)) / fabs(dot(intersection.normal,shadow_ray.d));
 
                         color = color*cc.factor;//(0.120/0.154);
 
@@ -107,7 +107,7 @@ class Lighttracer : public Renderer{
                     p = p*rr;
                 }
 
-                mul = mul*eval/p* correcting_factor * fabs(dot(intersection.g_normal,sample.wi)) / fabs(dot(intersection.normal,sample.wi));
+                mul = mul*eval/p;//* correcting_factor * fabs(dot(intersection.g_normal,sample.wi)) / fabs(dot(intersection.normal,sample.wi));
                 ray = Ray(intersection.hitpoint, sample_direction);
                 prev_intersection = intersection;
             }

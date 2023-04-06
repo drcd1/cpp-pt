@@ -37,7 +37,6 @@ public:
         return coords;
     }
 
-
     Ray get_ray(Vec2 xy) const {
         Vec3 direction;
         direction.z = -1.0;
@@ -45,6 +44,26 @@ public:
         direction.x = xy.x*tan_fovy*aspect_ratio;
 
         direction = normalized(coords*direction);
+
+        return Ray(origin, direction);
+    };
+
+
+    Ray get_ray(Vec2 xy, float& angular_pdf) const {
+        Vec3 direction;
+        direction.z = -1.0;
+        direction.y = xy.y*tan_fovy;
+        direction.x = xy.x*tan_fovy*aspect_ratio;
+
+        Vec3 d = direction;
+        float r = length(direction);
+
+        direction = normalized(coords*direction);
+
+        float area_pdf = 1.0/(tan_fovy*tan_fovy*aspect_ratio);
+
+
+        angular_pdf = area_pdf*r*r*r/fabs(d.z);
 
         return Ray(origin, direction);
     };

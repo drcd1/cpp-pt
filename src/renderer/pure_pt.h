@@ -33,7 +33,6 @@ class PurePt : public Renderer{
     Vec3 integrate(const Scene& scene, const Vec2& coords, Sampler& sampler) const {
         Ray ray = scene.camera->get_ray(coords);
         Intersection intersection;
-        Intersection prev_intersection;
         Vec3 col(0.0);
         Vec3 mul(1.0);
         for(int i = 0; i<32; i++){
@@ -59,7 +58,7 @@ class PurePt : public Renderer{
 
                 Vec3 eval = bsdf->eval(ray.d*(-1.0), sample_direction, intersection);
 
-                if(i>2){
+                if(i>-1){
                     float rr = russian_roulette(eval);
                     if(sampler.sample() > rr) {
                         break;
@@ -69,7 +68,7 @@ class PurePt : public Renderer{
 
                 mul = mul*eval/p;
                 ray = Ray(intersection.hitpoint+sample_direction*EPS, sample_direction);
-                prev_intersection = intersection;
+
             }
         }
         return col;

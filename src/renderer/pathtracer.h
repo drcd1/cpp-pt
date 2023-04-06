@@ -38,7 +38,7 @@ class Pathtracer : public Renderer{
         for(int i = 0; i<32; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
             if(!intersected && sampled_delta){
-                col = col + mul*render_sky(ray,scene)*float(sampled_delta);
+                //col = col + mul*render_sky(ray,scene)*float(sampled_delta);
                 break;
             } else {
                 auto bsdf = intersection.get_bxdf();

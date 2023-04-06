@@ -13,8 +13,6 @@
 namespace cpppt{
 
 
-
-
 struct RenderSettings{
     enum RT_ENGINE{
         BVH,

@@ -144,7 +144,7 @@ class PathtracerMIS : public Renderer{
 
                 Vec3 eval = bsdf->eval(ray.d*(-1.0), sample_direction, intersection);
 
-                if(i>2){
+                if(i>-1){
                     float rr = russian_roulette(eval);
                     if(sampler.sample() > rr) {
                         break;

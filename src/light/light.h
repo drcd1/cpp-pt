@@ -32,6 +32,8 @@ struct LightPathStart
     Vec3 position;
     Vec3 direction;
     Vec3 radiance;
+    bool delta = true;
+    Vec3 normal;
 };
 
 class Light{
