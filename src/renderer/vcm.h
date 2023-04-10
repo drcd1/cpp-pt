@@ -33,8 +33,15 @@ class VCM : public Renderer{
     };
 
     struct LightPathVertex{
+
+
         Intersection it;
-        std::shared_ptr<BxDF> bxdf;
+        union {
+            const BxDF* bxdf = nullptr;
+            const Light* light;
+        };
+        bool is_light = false;
+
         float p_lt_acc;
         float p_pt_acc;
         Vec3 radiance = Vec3(0.0f);
@@ -253,13 +260,15 @@ class VCM : public Renderer{
 
         lpv.it = Intersection();
         lpv.it.hitpoint = lps.position;
+        lpv.it.g_normal = lps.normal;
         lpv.p_lt_acc = lps.area_pdf;
-        lpv.it.hitpoint = lps.position;
         lpv.p_pt_acc = 1.0;
+        //MISSING COSINE FACTOR COMPUTATION?! HOW TO DISTINGUISH DELTA FROM NOT?
         //irradiance    only for first vertex
         factor = 1.0;
         lpv.radiance = lps.radiance*factor;
-        lpv.bxdf = nullptr; //todo
+        lpv.light = lps.light; //todo
+        lpv.is_light = true;
         //lpv.intersection = nullptr;//todo
 
         path.push_back(lpv);
@@ -283,7 +292,7 @@ class VCM : public Renderer{
 
                 LightPathVertex lpv;
                 lpv.it = intersection;
-                lpv.bxdf = bsdf;
+                lpv.bxdf = bsdf.get();
 
                 {
 
@@ -465,7 +474,7 @@ class VCM : public Renderer{
                 }
 
                 lv.it = intersection;
-                lv.bxdf = bsdf;
+                lv.bxdf = bsdf.get();
                 path.push_back(lv);
 
                 if(bsdf->is_emitter()){
@@ -542,7 +551,7 @@ class VCM : public Renderer{
                                 rad = lv.radiance*eval2;
 
                             } else {
-                                rad = lv.radiance*fabs(dot(shadow_ray.d,lv.it.g_normal));
+                                rad = lv.light->get_emission(s_dir*(-1.0), &lv.it);//*fabs(dot(shadow_ray.d,lv.it.g_normal));
                             }
 
                             //todo: divide by pdf

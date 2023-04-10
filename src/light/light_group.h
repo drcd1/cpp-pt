@@ -24,16 +24,18 @@ public:
         //uniformly sample
 
     };*/
-    virtual LightSample connect_eye_path(Sampler& s, const Intersection& hit) const{
-        int sampled = int(s.sample()*lights.size())%lights.size();
+    virtual LightSample connect_eye_path(Sampler& s, const Intersection& hit) const override {
+        float r = s.sample();
+        int sampled = int(r*lights.size())%lights.size();
         LightSample ls = lights.at(sampled)->connect_eye_path(s,hit);
         ls.pdf *= 1.0/float(lights.size());
         return ls;
     };
 
 
-    LightPathStart sample(Sampler& s) const {
-        int sampled = int(s.sample()*lights.size())%lights.size();
+    LightPathStart sample(Sampler& s) const override {
+        float r = s.sample();
+        int sampled = int(r*lights.size())%lights.size();
 
         LightPathStart lps = lights.at(sampled)->sample(s);
         lps.radiance = lps.radiance;
@@ -43,7 +45,7 @@ public:
     }
 
     //TODO: pdf of sample
-    float pdf(int l_id, const Light* parent, const Vec3& coords, const Vec3& lit) const {
+    float pdf(int l_id, const Light* parent, const Vec3& coords, const Vec3& lit) const override {
         if(parent!=this){
             throw std::runtime_error("PDF of light group from light in wrong group. TODO: fix");
         }
@@ -80,7 +82,7 @@ private:
 public:
     SceneLights(std::shared_ptr<LightGroup> lg, std::shared_ptr<EnvironmentLight> env):lg(lg),env(env){
     }
-    virtual LightSample connect_eye_path(Sampler& s, const Intersection& hit) const{
+    virtual LightSample connect_eye_path(Sampler& s, const Intersection& hit) const override {
         float r = s.sample();
         LightSample ls;
         if(r>0.5){
@@ -93,7 +95,7 @@ public:
     };
 
 
-    LightPathStart sample(Sampler& s) const {
+    LightPathStart sample(Sampler& s) const override {
         float r = s.sample();
         LightPathStart lps;
         if(r>0.5){
@@ -105,7 +107,7 @@ public:
         return lps;
     }
 
-    float pdf(int l_id, const Light* parent, const Vec3& coords, const Vec3& lit) const {
+    float pdf(int l_id, const Light* parent, const Vec3& coords, const Vec3& lit) const override {
         if(l_id<0){
             return 0.5*env->pdf(l_id,parent,coords,lit);
         } else {

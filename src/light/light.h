@@ -34,6 +34,7 @@ struct LightPathStart
     Vec3 radiance;
     bool delta = true;
     Vec3 normal;
+    const Light* light;
 };
 
 class Light{
@@ -58,6 +59,11 @@ public:
 
     //only for infinite non delta lights
     virtual Vec3 emit(const Vec3& dir) const{
+        throw std::runtime_error("Not implemented");
+    }
+
+    //what is the light being emited in direction dir, potencially at intersection it (area lights)
+    virtual Vec3 get_emission(const Vec3& dir, const Intersection* it = nullptr) const {
         throw std::runtime_error("Not implemented");
     }
 

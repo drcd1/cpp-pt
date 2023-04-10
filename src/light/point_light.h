@@ -37,7 +37,12 @@ public:
         lps.radiance = color->sample(Vec3(0.0))*intensity/(4.0*M_PI); //TODO: divide 4pi?
         lps.position = position;
         lps.direction = sample_sphere(s.sample(),s.sample());
+        lps.light = this;
         return lps;
+    }
+
+    virtual Vec3 get_emission(const Vec3& dir, const Intersection* it = nullptr) const override {
+        return  color->sample(Vec3(0.0))*intensity/(4.0*M_PI);
     }
     /*
     virtual Ray generate_light_ray(Sampler& s) {

@@ -26,7 +26,7 @@ class GlossyBxDF: public BxDF{
             #endif
         }
 
-        Vec3 eval(const Vec3& wo, const Vec3& wi,const Intersection& it) {
+        Vec3 eval(const Vec3& wo, const Vec3& wi,const Intersection& it) const override {
             Mat3 coords(it.tangent,it.bitangent,it.normal);
             Vec3 wo_loc = normalized(coords.transpose()*(wo));
             Vec3 wi_loc = normalized(coords.transpose()*(wi));
@@ -38,7 +38,7 @@ class GlossyBxDF: public BxDF{
             return ret;
 
         }
-        DirectionalSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) {
+        DirectionalSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) const override {
             if(delta){
                 return DirectionalSample(reflect(wo,it.normal),1.0,true);
             }
@@ -52,7 +52,7 @@ class GlossyBxDF: public BxDF{
             return DirectionalSample(sample_direction, pdf(wo,sample_direction,it), false);
         };
 
-        float pdf(const Vec3& wo, const Vec3& wi, const Intersection& it){
+        float pdf(const Vec3& wo, const Vec3& wi, const Intersection& it) const override {
             Mat3 coords(it.tangent,it.bitangent,it.normal);
             //todo: check if matrix is orthonormal
             Vec3 wo_loc = normalized(coords.transpose()*(wo));
@@ -70,7 +70,7 @@ class GlossyBxDF: public BxDF{
 
             return p;
         }
-        Vec3 emit(const Vec3& wo, const Intersection& it) {
+        Vec3 emit(const Vec3& wo, const Intersection& it) const override {
             return Vec3(0.0);
         }
 

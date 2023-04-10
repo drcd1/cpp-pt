@@ -1,6 +1,6 @@
-renderer PathtracerMIS
-resolution 512 512
+renderer Lighttracer
+resolution 256 256
 spp 10
-scene ..\\scenes\\water\\scene.ptscene
-output renders/test_embree
+scene ..\\scenes\\box_alone\\scene.ptscene
+output ../results/box_alone_lt
 rt_engine embree

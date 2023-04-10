@@ -5,6 +5,7 @@
 #include <math/sampler.h>
 #include <shape/intersection.h>
 #include <texture/texture.h>
+#include <bxdf/bxdf.h>
 
 namespace cpppt{
 
@@ -17,24 +18,24 @@ class EmissiveBxDF: public BxDF{
     public:
         EmissiveBxDF(Vec3 col, bool double_sided=true): col(col), double_sided(double_sided){}
 
-        Vec3 eval(const Vec3& wo, const Vec3& wi,const Intersection& it) {
+        Vec3 eval(const Vec3& wo, const Vec3& wi,const Intersection& it) const override {
             return Vec3(0.0,0.0,0.0);
         }
-        DirectionalSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) {
+        DirectionalSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) const override {
             throw std::runtime_error("We should never do this!");
             return DirectionalSample(Vec3(0.0),-1.0,true);
         };
 
 
-        float pdf(const Vec3& wo, const Vec3& wi,const Intersection& it) {
+        float pdf(const Vec3& wo, const Vec3& wi,const Intersection& it) const override {
             throw std::runtime_error("We should never do this!");
             return -1.0;
         }
 
-        Vec3 emit(const Vec3& wo, const Intersection& it) {
+        Vec3 emit(const Vec3& wo, const Intersection& it) const override {
             return col;
         }
-        virtual float emit_sample(Sampler& sampler, const Intersection& it, Vec3* sample_direction){
+        virtual float emit_sample(Sampler& sampler, const Intersection& it, Vec3* sample_direction) const override {
             float r1 = sampler.sample();
             float r2 = sampler.sample();
             Vec3 sample = sample_hemisphere_cos(r1, r2);
@@ -56,7 +57,7 @@ class EmissiveBxDF: public BxDF{
             return p;
         }
 
-        bool is_emitter(){
+        bool is_emitter() const override {
             return true;
         }
 

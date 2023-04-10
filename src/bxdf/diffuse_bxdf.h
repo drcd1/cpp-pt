@@ -22,10 +22,10 @@ class DiffuseBxDF: public BxDF{
             #endif
         }
 
-        Vec3 eval(const Vec3& wo, const Vec3& wi, const Intersection& it) {
+        Vec3 eval(const Vec3& wo, const Vec3& wi, const Intersection& it) const override {
             return col*fabs((dot(it.normal, wi)))/M_PI;
         }
-        DirectionalSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) {
+        DirectionalSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) const override {
             float r1 = sampler.sample();
             float r2 = sampler.sample();
             Vec3 sample = sample_hemisphere_cos(r1, r2);
@@ -40,11 +40,11 @@ class DiffuseBxDF: public BxDF{
             return DirectionalSample(sample_direction,p,false);
 
         };
-        Vec3 emit(const Vec3& wo, const Intersection& it) {
+        Vec3 emit(const Vec3& wo, const Intersection& it) const override {
             return Vec3(0.0);
         }
 
-        float pdf(const Vec3& wo, const Vec3& wi,const Intersection& it) {
+        float pdf(const Vec3& wo, const Vec3& wi,const Intersection& it) const override {
             return fabs(dot(it.normal,wi))/M_PI;
         }
 

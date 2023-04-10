@@ -27,6 +27,7 @@ class Lighttracer : public Renderer{
 
         LightPathStart lps = scene.light->sample(sampler);
         Ray ray(lps.position,lps.direction);
+        ray.o = ray.o+ray.d*EPS;
 
         Intersection intersection;
         Intersection prev_intersection;
@@ -58,10 +59,10 @@ class Lighttracer : public Renderer{
                 /* Connect to camera */
                 if(!sample.delta){
                     CameraConnection cc = scene.camera->connect_light_path(sampler, intersection);
-
                     Ray shadow_ray(intersection.hitpoint,
                         normalized(cc.pos-intersection.hitpoint),
                             length(cc.pos-intersection.hitpoint));
+                    shadow_ray.o=shadow_ray.o+shadow_ray.d*EPS;
 
                     if(bsdf->non_zero(intersection,ray.d*(-1.0),shadow_ray.d) && cc.i >-1){
                     if(!scene.primitive->intersect_any(shadow_ray)){
@@ -109,6 +110,7 @@ class Lighttracer : public Renderer{
 
                 mul = mul*eval/p;//* correcting_factor * fabs(dot(intersection.g_normal,sample.wi)) / fabs(dot(intersection.normal,sample.wi));
                 ray = Ray(intersection.hitpoint, sample_direction);
+                ray.o=ray.o+ray.d*EPS;
                 prev_intersection = intersection;
             }
         }

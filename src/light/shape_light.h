@@ -42,8 +42,14 @@ public:
 
     }
 
-    float pdf(int l_id, const Light* parent, const Vec3& coords, const Vec3& lit) const {
+    float pdf(int l_id, const Light* parent, const Vec3& coords, const Vec3& lit) const override {
         return 1.0/primitive->get_shape()->area();
+    }
+
+    virtual Vec3 get_emission(const Vec3& dir, const Intersection* it = nullptr) const override {
+        return primitive->get_material()->get_bxdf(it->texture_coords)->emit(
+            dir,
+            *it)*fabs(dot(it->g_normal, dir));
     }
 
     LightPathStart sample(Sampler& s) const {
@@ -55,11 +61,14 @@ public:
         auto bxdf = primitive->get_material()->get_bxdf(it.texture_coords);
         float p = bxdf->emit_sample(s, it, &sample_direction);
         LightPathStart lps;
+        lps.light = this;
+        lps.normal = it.g_normal;
         lps.direction = sample_direction;
         lps.position = it.hitpoint;
         lps.radiance =  bxdf->emit(
             normalized(lps.direction),
-            it)*fabs(dot(it.normal,lps.direction));
+            it);
+        lps.radiance =lps.radiance*fabs(dot(it.g_normal,lps.direction));
 
         lps.pdf = (1.0/primitive->get_shape()->area())*p;
         lps.angle_pdf = p;

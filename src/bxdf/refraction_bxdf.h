@@ -6,6 +6,7 @@
 #include <shape/intersection.h>
 #include <texture/texture.h>
 #include <math/math.h>
+#include <bxdf/bxdf.h>
 
 namespace cpppt{
 /*
@@ -20,10 +21,10 @@ class RefractionBxDF: public BxDF{
         float ior;
     public:
         RefractionBxDF(float ior):ior(ior){}
-        Vec3 eval(const Vec3& wo, const Vec3& wi,const Intersection& it) {
+        Vec3 eval(const Vec3& wo, const Vec3& wi,const Intersection& it) const override {
             return Vec3(1.0,1.0,1.0);
         }
-        DirectionalSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) {
+        DirectionalSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) const override {
             //Vec3 n = correct_normal(it.normal, wo);
 
             Vec3 n = it.normal;
@@ -51,10 +52,10 @@ class RefractionBxDF: public BxDF{
             return DirectionalSample(sample_direction,1.0,true);
         }
 
-        float pdf(const Vec3& wo, const Vec3& wi,const Intersection& it) {
+        float pdf(const Vec3& wo, const Vec3& wi,const Intersection& it) const override {
             return 1.0;
         }
-        Vec3 emit(const Vec3& wo, const Intersection& it) {
+        Vec3 emit(const Vec3& wo, const Intersection& it) const override {
             return Vec3(0.0);
         }
 

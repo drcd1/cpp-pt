@@ -121,6 +121,10 @@ public:
         return true;
     }
 
+    virtual Vec3 get_emission(const Vec3& dir, const Intersection* it = nullptr) const override {
+        return emit(dir);
+    }
+
 
 
     //for NEE
@@ -172,8 +176,6 @@ public:
 
     LightPathStart sample(Sampler& s) const {
         throw std::runtime_error("Not implemented");
-        LightPathStart lps;
-        return lps;
     }
 
 
