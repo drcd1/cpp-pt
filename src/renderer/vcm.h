@@ -172,38 +172,44 @@ class VCM : public Renderer{
         dir=dir/r;
 
         //TODO: TRANSPOSED
-        if(from_light.size()>1)
+        if(b.size()>1)
         {
-        Vec3 wo = normalized(from_light.at(from_light.size()-2).it.hitpoint - ll.it.hitpoint);
+        Vec3 wo = normalized(b.at(b.size()-2).it.hitpoint - ll.it.hitpoint);
         Vec3 wi = dir;
 
         float p = ll.bxdf->pdf(wo,wi,ll.it);
         p*= russian_roulette(ll.bxdf->eval(wo,wi,ll.it));
         //lc.p_lt_acc = ll.p_lt_acc*fabs(dot(dir,lc.it.g_normal))/(r*r);
-        lc.p_lt_acc =  p*fabs(dot(dir,lc.it.g_normal))/(r*r);
+        float cos_theta = fabs(dot(dir,lc.it.g_normal));
+        lc.p_lt_acc =  p*cos_theta/(r*r);
 
         } else {
+            Vec3 wi = dir;
             //TODO: don't hardcode!
-            float p = ll.p_lt_acc*dot(dir,ll.it.g_normal)/M_PI;
-            lc.p_lt_acc = ll.p_lt_acc*fabs(dot(dir,lc.it.g_normal))/(r*r);
+            float p = ll.p_lt_acc*fabs(dot(wi,ll.it.g_normal))/M_PI;
+            float cos_theta = fabs(dot(wi,lc.it.g_normal));
+            lc.p_lt_acc = p*cos_theta/(r*r);
         }
+
         //NOT TRANSPOSED
         {
-        Vec3 wi = dir;
-        Vec3 wo = normalized(from_camera.at(from_camera.size()-2).it.hitpoint - lc.it.hitpoint);
+        Vec3 wi = dir*(-1.0);
+        Vec3 wo = normalized(a.at(a.size()-2).it.hitpoint - lc.it.hitpoint);
 
-        float p = lc.bxdf->pdf(wi,wo,lc.it);
-        p*= russian_roulette(lc.bxdf->eval(wo,wi,ll.it));
+        float p = lc.bxdf->pdf(wo,wi,lc.it);
+        float cos_theta = fabs(dot(dir,ll.it.g_normal));
+        p*= russian_roulette(lc.bxdf->eval(wo,wi,lc.it));
+        p*=cos_theta/(r*r);
 
-        ll.p_pt_acc = p*fabs(dot(dir,ll.it.g_normal))/(r*r);
+        ll.p_pt_acc = p;
         }
 
         //Now all the paths probabilities are computed, and we can just sum
 
 
         //todo: okay, so this is way to0 many copies
-        l = from_camera;
-        l.insert(l.end(),from_light.rbegin(),from_light.rend());
+        l = a;
+        l.insert(l.end(),b.rbegin(),b.rend());
         } else if(from_camera.size()>0){
             l = from_camera;
         } else {
@@ -219,14 +225,14 @@ class VCM : public Renderer{
     float computePdfSumFullPath(const LightPath& lc) const {
         float sum = 0.0;
 
-        //sum+=lc.at(0).p_lt_acc;
+        sum+=lc.at(0).p_lt_acc;
         for(int i = lc.size()-2;i<lc.size()-1; i++){
             sum+=lc.at(i).p_pt_acc*lc.at(i+1).p_lt_acc;
             if(std::isnan(sum)){
                 std::cout<<"ON NOO"<<std::endl;
             }
         }
-        //sum+=lc.at(lc.size()-1).p_pt_acc;
+        sum+=lc.at(lc.size()-1).p_pt_acc;
         if(std::isnan(sum)){
             std::cout<<"klkadlkw"<<std::endl;
         }
@@ -248,7 +254,7 @@ class VCM : public Renderer{
 
     static float russian_roulette(const Vec3& col){
         //Todo: better rr
-        return (fabs(col.x*0.2 + col.y*0.5 +col.z*0.3))*0.5 + 0.4;
+        return std::min(1.0f,(fabs(col.x*0.2f + col.y*0.5f +col.z*0.3f))*0.5f + 0.4f);
     }
 
 
@@ -256,6 +262,7 @@ class VCM : public Renderer{
         LightPath path;
         LightPathStart lps = scene.light->sample(sampler);
         Ray ray(lps.position,lps.direction);
+        ray.o = ray.o+ray.d*EPS;
         LightPathVertex lpv;
 
         lpv.it = Intersection();
@@ -265,8 +272,8 @@ class VCM : public Renderer{
         lpv.p_pt_acc = 1.0;
         //MISSING COSINE FACTOR COMPUTATION?! HOW TO DISTINGUISH DELTA FROM NOT?
         //irradiance    only for first vertex
-        factor = 1.0;
-        lpv.radiance = lps.radiance*factor;
+        //should factor be 1.0?
+        lpv.radiance = lps.radiance;
         lpv.light = lps.light; //todo
         lpv.is_light = true;
         //lpv.intersection = nullptr;//todo
@@ -280,7 +287,7 @@ class VCM : public Renderer{
 
         RgbImage& image = scene.camera->get_image();
         float old_p = lps.angle_pdf;
-        for(int i = 0; i<0; i++){
+        for(int i = 0; i<32; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
             if(!intersected){
                 return path;
@@ -349,7 +356,9 @@ class VCM : public Renderer{
 
                     Ray shadow_ray(intersection.hitpoint,
                         normalized(cc.pos-intersection.hitpoint),
-                            length(cc.pos-intersection.hitpoint));
+                            length(cc.pos-intersection.hitpoint)-2.0*EPS);
+
+                    shadow_ray.o = shadow_ray.o+shadow_ray.d*EPS;
 
                     if(bsdf->non_zero(intersection,ray.d*(-1.0),shadow_ray.d) && cc.i >-1){
                     if(!scene.primitive->intersect_any(shadow_ray)){
@@ -360,17 +369,28 @@ class VCM : public Renderer{
                             normalized(shadow_ray.d),
                             intersection
                         ) * correcting_factor * fabs(dot(intersection.g_normal,shadow_ray.d)) / fabs(dot(intersection.normal,shadow_ray.d));
-
+                        color = color*factor;
                         color = color*cc.factor;
 
                         //note: cameras have lens with zero area
 
                         float pdf_sum = 0.0;
                         LightPath nlp  = pdfSum(LightPath(), new_lp,pdf_sum);
+                        float w_mis;
+                        if(nlp.at(0).p_lt_acc>1e10){
+                            w_mis = 1.0f;
+                        } else {
+                            w_mis = nlp.at(0).p_lt_acc/pdf_sum;
+                        }
 
-
+                        if(w_mis<0.0){
+                            std::cout<<"NOOOO"<<std::endl;
+                        }
+                        if(w_mis>1.0){
+                            std::cout<<"NOO222"<<std::endl;
+                        }
                         //MIS
-                        color = color*nlp.at(0).p_lt_acc/pdf_sum;
+                        color = color*w_mis;
                         if(std::isnan(color.x) ||std::isnan(color.y)  || std::isnan(color.z)){
                             std::cout<<"What :("<<std::endl;
                         }
@@ -397,15 +417,19 @@ class VCM : public Renderer{
 
                 float r2 = lensqr(path.back().it.hitpoint - intersection.hitpoint);
                 float c = fabs(dot(path.back().it.g_normal,ray.d));
-                //TODO: russian roulette prob
 
-                path.back().p_pt_acc*= bsdf->pdf(sample.wi, ray.d*(-1.0),intersection)*r2/c;
+                float p_pdf =  bsdf->pdf(sample.wi, ray.d*(-1.0),intersection);
+                Vec3 eval_pt = bsdf->eval(sample.wi, ray.d*(-1.0),intersection);
+                p_pdf*=russian_roulette(eval_pt/p_pdf);
+
+                //TODO: no *=?
+                path.back().p_pt_acc =p_pdf*r2/c;
 
                 }
 
                 //todo: russian roulletes only for 2 boucne or something
                 if(i>-1){
-                    float rr = russian_roulette(eval);
+                    float rr = russian_roulette(eval/p);
                     if(sampler.sample() > rr) {
                         break;
                     }
@@ -416,6 +440,7 @@ class VCM : public Renderer{
                 mul = mul*eval/p* correcting_factor * fabs(dot(intersection.g_normal,sample.wi)) / fabs(dot(intersection.normal,sample.wi));
 
                 ray = Ray(intersection.hitpoint, sample_direction);
+                ray.o = ray.o+ray.d*EPS;
                 prev_intersection = intersection;
             }
         }
@@ -429,8 +454,11 @@ class VCM : public Renderer{
         //todo
     }
 
-    Vec3 integrate(const Scene& scene, const Vec2& coords, Sampler& sampler, int i=0) const {
+    Vec3 integrate(const Scene& scene, const Vec2& coords, Sampler& sampler, int n_sample=0) const {
         float angular_pdf = 0.0;
+
+        auto light_path = lightpaths.at(n_sample);
+
 
         Ray ray = scene.camera->get_ray(coords,angular_pdf);
         Intersection intersection;
@@ -442,6 +470,7 @@ class VCM : public Renderer{
         LightPath path;
 
         LightPathVertex lv;
+        lv.it.hitpoint = ray.o;
 
         lv.p_pt_acc = 1.0;// single surface point possible: origin
         lv.p_lt_acc = 1.0; //every light path will deterministically connect to center
@@ -469,7 +498,7 @@ class VCM : public Renderer{
                 float cosTheta = fabs(dot(dir,intersection.g_normal));
                 lv.p_pt_acc = compute_area_pdf(p,r2,cosTheta);
 
-                if(lv.p_pt_acc>100000.0){
+                if(lv.p_pt_acc>10000000.0){
                     std::cout<<"whaaaaa"<<std::endl;
                 }
 
@@ -487,7 +516,6 @@ class VCM : public Renderer{
                         Vec3 rad = bsdf->emit(ray.d*(-1.0),intersection);
                         col = col + mul*rad;
                     } else {
-                        break;
                         auto lid = intersection.primitive->get_light()->get_group();
                         float p_nee = scene.light->pdf(lid.first,lid.second, intersection.texture_coords,ray.o);
 
@@ -495,8 +523,27 @@ class VCM : public Renderer{
                         path.back().p_lt_acc = p_nee;
                         float sum = 0.0;
                         LightPath lp = pdfSum(path, LightPath(), sum);
-                        float p = lp.back().p_pt_acc;
-                        float w_mis = p/sum;
+                        float pdf = lp.back().p_pt_acc;
+                        float w_mis = pdf/sum;
+
+                        {
+                            float r = length(intersection.hitpoint-path.at(path.size()-2).it.hitpoint);
+
+                            //auto lid = lv.light->get_group();
+                            float cos_theta = fabs(dot(intersection.g_normal,ray.d));
+                            float p_nee = scene.light->pdf(lid.first,lid.second, intersection.texture_coords,ray.o);
+                            float p_pt = p;
+                            p_pt *=cos_theta/(r*r);
+                            float w_mis2 = p_pt/(p_nee+ p_pt);
+
+
+                        }
+                        if(w_mis<0.0){
+                            std::cout<<"NOOOO"<<std::endl;
+                        }
+                        if(w_mis>1.0){
+                            std::cout<<"NOO222"<<std::endl;
+                        }
                         col = col + mul*rad*w_mis;
                         if(std::isnan(col.x)||std::isnan(col.y)|| std::isnan(col.z)){
                             std::cout<<"whatttt2"<<std::endl;
@@ -518,10 +565,11 @@ class VCM : public Renderer{
 
                 if(!sample.delta){
 
-                    auto light_path = lightpaths.at(i);
+                    LightPath n_lp;
 
-                    for(int lv_idx = 0; lv_idx<light_path.size(); lv_idx++){
+                    for(int lv_idx = 0; lv_idx<1; lv_idx++){
                         auto lv = light_path.at(lv_idx);
+                        n_lp.push_back(lv);
                         LightSample ls;
                         ls.delta = false;
                         ls.infinite = false;
@@ -556,14 +604,34 @@ class VCM : public Renderer{
 
                             //todo: divide by pdf
                             float sum=0.0;
-                            auto lp = pdfSum(path,light_path,sum);
+                            auto lp = pdfSum(path,n_lp,sum);
                             float pdf = lp.at(i+1).p_pt_acc*lp.at(i+2).p_lt_acc;
                             float w_mis = pdf/sum;
+                            if(pdf>1e10){
+                                w_mis = 1.0;
+                            }
+
+                            {
+                                auto lid = lv.light->get_group();
+                                float cos_theta = fabs(dot(lv.it.g_normal,shadow_ray.d));
+                                float p_nee = scene.light->pdf(lid.first,lid.second, lv.it.texture_coords,ray.o);
+                                float p_pt = intersection.get_bxdf()->pdf(ray.d*(-1.0f),shadow_ray.d, intersection);
+                                float rr = russian_roulette(eval1/p_pt);
+                                p_pt *=cos_theta/(r*r);
+                                p_pt *= rr;
+                                float w_mis2 = p_nee/(p_nee+ p_pt);
+                            }
 
                             //convert p_lt_acc to hemisphere p
                             //eval already includes the cosine term;
                             float p_nee = lp.at(i+2).p_lt_acc*r*r;
 
+                            if(w_mis<0.0){
+                            std::cout<<"NOOOO"<<std::endl;
+                            }
+                            if(w_mis>1.0){
+                                std::cout<<"NOO222"<<std::endl;
+                            }
                             col =col+ mul*rad*eval1*w_mis/p_nee;
                             if(std::isnan(col.x)||std::isnan(col.y)|| std::isnan(col.z)){
                             std::cout<<"whatttt3"<<std::endl;
@@ -593,7 +661,7 @@ class VCM : public Renderer{
 
                 //Todo: nonlinear rr
                 if(i>-1){
-                    float rr = russian_roulette(eval);
+                    float rr = russian_roulette(eval/p);
                     if(sampler.sample() > rr) {
                         break;
                     }
@@ -653,7 +721,7 @@ public:
 
             //kdtree.build();
 
-            #pragma omp parallel for
+          //  #pragma omp parallel for
             for(int i = 0; i<res.x; i++){
 
 

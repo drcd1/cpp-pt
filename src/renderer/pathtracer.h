@@ -37,7 +37,7 @@ class Pathtracer : public Renderer{
         bool sampled_delta = true;
         for(int i = 0; i<32; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
-            if(!intersected && sampled_delta){
+            if(!intersected/* && sampled_delta*/){
                 //col = col + mul*render_sky(ray,scene)*float(sampled_delta);
                 break;
             } else {
@@ -119,7 +119,7 @@ public:
         RgbImage* image= &(sc.camera->get_image());
         Vec2i res = image->res;
 
-        #pragma omp parallel for
+       // #pragma omp parallel for
         for(int i = 0; i<res.x; i++){
 
 

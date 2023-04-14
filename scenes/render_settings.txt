@@ -1,6 +1,6 @@
-renderer Lighttracer
+renderer VCM
 resolution 256 256
-spp 10
+spp 5
 scene ..\\scenes\\box_alone\\scene.ptscene
-output ../results/box_alone_lt
+output ../results/box_alone2_pt_vcm
 rt_engine embree

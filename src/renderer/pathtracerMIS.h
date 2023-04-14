@@ -12,6 +12,7 @@
 #include <math/sampler.h>
 #include <omp.h>
 #include <iostream>
+#include <bxdf/emissive_bxdf.h>
 #include <light/shape_light.h>
 namespace cpppt{
 class PathtracerMIS : public Renderer{
@@ -33,7 +34,7 @@ class PathtracerMIS : public Renderer{
 
     static float russian_roulette(const Vec3& col){
         //Todo: better rr
-        return (fabs(col.x*0.2 + col.y*0.5 +col.z*0.3))*0.5 + 0.4;
+        return std::min((fabs(col.x*0.2f + col.y*0.5f +col.z*0.3f))*0.5f + 0.4f,1.0f);
     }
 
     Vec3 integrate(const Scene& scene, const Vec2& coords, Sampler& sampler) const {
@@ -43,6 +44,7 @@ class PathtracerMIS : public Renderer{
         Vec3 mul(1.0);
         bool sampled_delta = true;
         float p = 1.0;
+        float rr = 1.0;
         for(int i = 0; i<32; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
             if(!intersected){
@@ -81,10 +83,11 @@ class PathtracerMIS : public Renderer{
                         float r = ray.max_t;
                         float cos_theta = fabs(dot(intersection.normal,ray.d)) + EPS;
                         float p_bsdf_nee = scene.light->pdf(lid.first,lid.second, intersection.texture_coords,ray.o)*r*r/cos_theta;
-
+                        p_bsdf_nee/=rr;
                         float w_mis = p_bsdf_bsdf/(p_bsdf_bsdf+p_bsdf_nee);
 
                         Vec3 rad = bsdf->emit(ray.d*(-1.0),intersection);
+
                         col = col + mul*rad*w_mis;
                     }
                     break; //emitters do not reflect!
@@ -123,14 +126,15 @@ class PathtracerMIS : public Renderer{
                         float p_nee_bsdf = bsdf->pdf(ray.d*(-1.0),s_dir,intersection);
                         float cosine_term = fabs(dot(light_sample.normal,s_dir))+EPS;
                         float p_nee_nee = light_sample.pdf*r*r/cosine_term;
-                        float w_mis = p_nee_nee/(p_nee_bsdf + p_nee_nee);
 
-                        Vec3 eval = bsdf->eval(
+                        Vec3 eval4 = bsdf->eval(
                             ray.d*(-1.0),
                             shadow_ray.d,
                             intersection
                         );
-                        col = col + mul*eval*light_sample.intensity/(light_sample.pdf*r*r)*w_mis;
+                        p_nee_bsdf *= russian_roulette(eval4/p_nee_bsdf);
+                        float w_mis = p_nee_nee/(p_nee_bsdf + p_nee_nee);
+                        col = col + mul*eval4*light_sample.intensity/(light_sample.pdf*r*r)*w_mis;
                     }
                     }
                 } else {
@@ -142,16 +146,18 @@ class PathtracerMIS : public Renderer{
                     break;
                 }
 
-                Vec3 eval = bsdf->eval(ray.d*(-1.0), sample_direction, intersection);
+                Vec3 eval1 = bsdf->eval(ray.d*(-1.0), sample_direction, intersection);
+
+
 
                 if(i>-1){
-                    float rr = russian_roulette(eval);
+                    float rr = russian_roulette(eval1/p);
                     if(sampler.sample() > rr) {
                         break;
                     }
                     p = p*rr;
                 }
-                mul = mul*eval/p;
+                mul = mul*eval1/p;
                 ray = Ray(intersection.hitpoint+sample_direction*EPS, sample_direction);
             }
         }
@@ -193,7 +199,7 @@ public:
         total_pixels = res.x*res.y;
         #endif
 
-        #pragma omp parallel for
+        //#pragma omp parallel for
         for(int i = 0; i<res.x; i++){
             #ifndef NO_GUI
             counter.at(omp_get_thread_num()) += res.y;
