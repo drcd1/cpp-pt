@@ -4,11 +4,17 @@
 #include <math/math.h>
 
 #include <stb_image_write.h>
-
 #include <stb_image.h>
+
+
+#define TINYEXR_USE_MINIZ 0
+#define TINYEXR_USE_STB_ZLIB 1
+#include <tinyexr.h>
 
 #include <vector>
 #include <string>
+#include <cstring>
+#include <cstdlib>
 
 
 namespace cpppt{
@@ -319,6 +325,62 @@ public:
                 pixel_ops::put2float(pixels.at(i),&data.at(i*3));
             }
             stbi_write_hdr((filename+".hdr").c_str(), res.x,res.y,3,data.data());
+        }
+        {
+
+            EXRHeader header;
+            InitEXRHeader(&header);
+
+            EXRImage image;
+            InitEXRImage(&image);
+            std::vector<float> data[3];
+            data[0].resize(pixels.size());
+            data[1].resize(pixels.size());
+            data[2].resize(pixels.size());
+
+            for(int i = 0; i<pixels.size(); i++){
+                data[0][i] = pixels.at(i).x;
+                data[1][i] = pixels.at(i).y;
+                data[2][i] = pixels.at(i).z;
+            }
+
+
+            float* image_ptr[3];
+            image_ptr[0] = &(data[2].at(0)); // B
+            image_ptr[1] = &(data[1].at(0)); // G
+            image_ptr[2] = &(data[0].at(0)); // R
+
+            image.images = (unsigned char**)image_ptr;
+            image.width = res.x;
+            image.height = res.y;
+
+            header.num_channels = 3;
+            header.channels = (EXRChannelInfo *)malloc(sizeof(EXRChannelInfo) * header.num_channels);
+            // Must be (A)BGR order, since most of EXR viewers expect this channel order.
+            strncpy(header.channels[0].name, "B", 255); header.channels[0].name[strlen("B")] = '\0';
+            strncpy(header.channels[1].name, "G", 255); header.channels[1].name[strlen("G")] = '\0';
+            strncpy(header.channels[2].name, "R", 255); header.channels[2].name[strlen("R")] = '\0';
+
+            header.pixel_types = (int *)malloc(sizeof(int) * header.num_channels);
+            header.requested_pixel_types = (int *)malloc(sizeof(int) * header.num_channels);
+            for (int i = 0; i < header.num_channels; i++) {
+                header.pixel_types[i] = TINYEXR_PIXELTYPE_FLOAT; // pixel type of input image
+                header.requested_pixel_types[i] = TINYEXR_PIXELTYPE_HALF; // pixel type of output image to be stored in .EXR
+            }
+
+            const char* err = NULL; // or nullptr in C++11 or later.
+            int ret = SaveEXRImageToFile(&image, &header, (filename+".exr").c_str(), &err);
+            if (ret != TINYEXR_SUCCESS) {
+                fprintf(stderr, "Save EXR err: %s\n", err);
+                FreeEXRErrorMessage(err); // free's buffer for an error message
+                throw(std::runtime_error("Unable tosave image"));
+            }
+            printf("Saved exr file. [ %s ] \n", (filename+".exr").c_str());
+
+
+            free(header.channels);
+            free(header.pixel_types);
+            free(header.requested_pixel_types);
         }
     }
 

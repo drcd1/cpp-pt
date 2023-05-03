@@ -60,7 +60,7 @@ public:
 
         direction = normalized(coords*direction);
 
-        float area_pdf = 1.0/(tan_fovy*tan_fovy*aspect_ratio);
+        float area_pdf = 1.0/(4.0*tan_fovy*tan_fovy*aspect_ratio);
 
 
         angular_pdf = area_pdf*r*r*r/fabs(d.z);
@@ -73,14 +73,16 @@ public:
 
 
 
-    virtual float pdf(const Vec3& pt, const Vec3& normal) const {
-        float p = 1.0/(image.res.x*image.res.y);
+    virtual float pdf(const Vec3& pt) const {
+        //float p = 1.0/(image.res.x*image.res.y);
         Vec3 dir = coords.transpose()*(pt-origin);
         //TODO: optimize
         float r = length(dir);
         Vec3 n_dir = dir/r;
-        p *= dot(dir,coords*(Vec3(0.0,0.0,-1.0)));
-        p *= fabs(dot(normal,n_dir))/(r*r);
+        //p *= dot(dir,coords*(Vec3(0.0,0.0,-1.0)));
+        //p *= fabs(dot(normal,n_dir))/(r*r);
+        float p = 1.0;//(image.res.x*image.res.y);
+        p*=fabs(1.0/(4.0*aspect_ratio*tan_fovy*tan_fovy*n_dir.z*n_dir.z*n_dir.z));
         return p;
 
     }
@@ -119,7 +121,8 @@ public:
         Vec3 forwards = coords*Vec3(0.0,0.0,1.0);
 
         //CAMERA PLANE GOES -1 TO 1, SO AREA FACTOR IS 1/4
-        cc.factor = /*std::fabs(dot(it.normal,forwards))/*/1.0/(4.0*std::fabs(n_dir.z*n_dir.z*n_dir.z) *n_d_l*n_d_l *tan_fovy* tan_fovy);
+        //the cosine factor on top is in the lightracing
+        cc.factor = /*std::fabs(dot(it.normal,forwards))/*/1.0/(4.0*std::fabs(n_dir.z*n_dir.z*n_dir.z) *n_d_l*n_d_l *tan_fovy* tan_fovy*aspect_ratio);
 
         return cc;
 

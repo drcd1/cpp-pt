@@ -14,6 +14,7 @@ struct SceneGUI{
     char output_name[MAX_CHARS] = "scene_hdr";
     Vec2i res={256,256};
     int spp=1;
+    int max_path_length=32;
     float exposure = 1.0;
 };
 }

@@ -372,6 +372,7 @@ public:
         ImGui::DragInt("Res X", &sceneGUI.res.x);
         ImGui::DragInt("Res Y", &sceneGUI.res.y);
         ImGui::DragInt("SPP", &sceneGUI.spp);
+        ImGui::DragInt("Max Path Length", &sceneGUI.max_path_length);
         ImGui::DragFloat("Viewport Exposure", &sceneGUI.exposure,0.01,10.0);
 
         if(ImGui::Button("Render") && current_task == Task::Name::NONE){
@@ -647,6 +648,7 @@ private:
         sv.rs.resY = sceneGUI.res.y;
         sv.rs.renderer = current_renderer;
         sv.rs.spp = sceneGUI.spp;
+        sv.rs.max_path_length = sceneGUI.max_path_length;
         sv.rs.scene_name = std::string(sceneGUI.scene_filename);
         sv.rs.output_name = sceneGUI.output_name;
         glm::vec3 o = camera.controls.origin;

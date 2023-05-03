@@ -32,10 +32,13 @@ class GlossyBxDF: public BxDF{
             Vec3 wi_loc = normalized(coords.transpose()*(wi));
             Vec3 wh = normalized(wo_loc+wi_loc);
             MicrofacetDistribution md(alpha,alpha);
-            Vec3 ret = md.g(wo_loc,wi_loc)*md.d(wh)/(4.0*dot(wo,it.normal));
-            if(std::isnan(ret.x) || std::isnan(ret.y) || std::isnan(ret.z))
+            float e = md.g(wo_loc,wi_loc)*md.d(wh)/(4.0*dot(wo,it.normal));
+            if(std::isnan(e))
                 std::cout<<"nannn21"<<std::endl;
-            return ret;
+            
+            if(e<0.0f)
+                e = 0.0f;
+            return Vec3(e);
 
         }
         DirectionalSample sample(Sampler& sampler, const Vec3& wo, const Intersection& it) const override {

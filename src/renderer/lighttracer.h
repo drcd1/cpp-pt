@@ -14,10 +14,10 @@
 namespace cpppt{
 class Lighttracer : public Renderer{
     int samples;
-
+    int max_path_length;
     static float russian_roulette(const Vec3& col){
         //Todo: better rr
-        return (fabs(col.x*0.2 + col.y*0.5 +col.z*0.3))*0.5 + 0.4;
+        return std::min(1.0,(fabs(col.x*0.2 + col.y*0.5 +col.z*0.3))*0.5 + 0.4);
     }
 
 
@@ -36,7 +36,7 @@ class Lighttracer : public Renderer{
         bool sampled_delta = false;
 
         RgbImage& image = scene.camera->get_image();
-        for(int i = 0; i<32; i++){
+        for(int i = 0; i<max_path_length-1; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
             if(!intersected){
                 break;
@@ -101,7 +101,7 @@ class Lighttracer : public Renderer{
 
 
                 if(i>2){
-                    float rr = russian_roulette(eval);
+                    float rr = russian_roulette(eval/p);
                     if(sampler.sample() > rr) {
                         break;
                     }
@@ -119,7 +119,7 @@ class Lighttracer : public Renderer{
     }
 
 public:
-    Lighttracer(const RenderSettings& rs): samples(rs.spp) {}
+    Lighttracer(const RenderSettings& rs): samples(rs.spp), max_path_length(rs.max_path_length){}
 
     void render(Scene& sc, std::string filename) {
         RgbImage* image= &(sc.camera->get_image());

@@ -6,6 +6,7 @@
 #include <renderer/renderer.h>
 #include <math/math.h>
 #include <camera/camera.h>
+#include <camera/camera_perspective.h>
 #include <image/rgb_image.h>
 #include <primitive/ray.h>
 #include <shape/intersection.h>
@@ -36,10 +37,10 @@ class VCM : public Renderer{
 
 
         Intersection it;
-        union {
-            const BxDF* bxdf = nullptr;
-            const Light* light;
-        };
+        
+        std::shared_ptr<const BxDF> bxdf = nullptr;
+        const Light* light = nullptr;
+        
         bool is_light = false;
 
         float p_lt_acc;
@@ -55,7 +56,7 @@ class VCM : public Renderer{
 
 
     KDTree<Photon> kdtree;
-/*
+
 
     bool testDL(){
         //create simple path
@@ -64,49 +65,107 @@ class VCM : public Renderer{
         //weights are the same
         //they sum to one
 
-        LightPath lp;
-        LightPath cp;
 
         Intersection vc;
         Intersection vmid;
         Intersection vl;
+        CameraPerspective cp({256,256},1.0,{0.0f,0.0f,0.0f}, {0.0f,1.0f,0.0f},{0.0f,0.0f,1.0f});
 
-        vc.hitpoint = Vec3(0.f,0.f,0.f);
+        vc.hitpoint = cp.getOrigin();
         vmid.hitpoint = Vec3(0.0f,2.0f, -1.0f);
         vmid.g_normal = Vec3(0.0f,0.0f,1.0f);
-        vl.hitpoint = Vec3(0.0f,0.0f,1.0f);
+        vl.hitpoint = Vec3(0.0f,3.0f,0.0f);
         vl.g_normal = Vec3(0.0f,-1.0f,0.0f);
 
-        {
+        
 
         LightPathVertex v1;
       //  v1.it = v1.hitpoint;
         LightPathVertex v2;
         LightPathVertex v3;
 
+        v1.it = vc;
+        v2.it = vmid;
+        v3.it = vl;
+
+        v1.p_lt_acc = 1.0;
+        v1.p_pt_acc = 1.0;
+
+        v2.p_pt_acc = compute_area_pdf(
+            cp.pdf(v2.it.hitpoint),
+            lensqr(v2.it.hitpoint-v1.it.hitpoint),
+            fabs(dot(normalized(v2.it.hitpoint-v1.it.hitpoint), v2.it.g_normal)));
+
+        v2.p_lt_acc = 0.5*compute_area_pdf(fabs(dot(normalized(v3.it.hitpoint-v2.it.hitpoint),v3.it.g_normal))/M_PI,
+                      lensqr(v2.it.hitpoint-v3.it.hitpoint),
+                      fabs(dot(normalized(v2.it.hitpoint-v3.it.hitpoint),v2.it.g_normal))
+
+        );
+
+
+        v2.bxdf = std::make_shared<DiffuseBxDF>(Vec3(1.0f,1.0f,1.0f));
+        v2.it.normal = v2.it.g_normal;
+
+        v3.p_pt_acc = compute_area_pdf(
+            v2.bxdf->pdf(
+                normalized(v1.it.hitpoint-v2.it.hitpoint),
+                normalized(v3.it.hitpoint-v2.it.hitpoint),
+                v2.it
+            ),
+            lensqr(v3.it.hitpoint-v2.it.hitpoint),
+            fabs(dot(normalized(v3.it.hitpoint-v2.it.hitpoint),v2.it.g_normal))
+        
+        );
+        v3.p_lt_acc = 2.0;
+
+        LightPath lp;
+
         lp.push_back(v1);
         lp.push_back(v2);
         lp.push_back(v3);
 
+
+        
+        float sum_forward = 0.0f;
+        float sum_nee = 0.0f;
+        float sum_lt = 0.0f;
+        LightPath a = pdfSum(lp,LightPath(),sum_forward);
+        LightPath b = pdfSum({v1,v2},{v3}, sum_nee);
+        LightPath c = pdfSum(LightPath(),{v3,v2,v1},sum_lt);
+
+        float pa=a.back().p_pt_acc;
+        float pb =b.at(1).p_pt_acc*b.at(2).p_lt_acc;
+        float pc = c.at(0).p_lt_acc;
+
+        float pfor = v2.p_pt_acc*v3.p_pt_acc;
+        float pnee = v2.p_pt_acc*2.0;
+        float plt = v2.p_lt_acc*2.0;
+        
+        float sum_gt = pfor+pnee+plt;
+
+        if(fabs(sum_gt-sum_forward)>0.001){
+            std::cout<<"Error!"<<std::endl;
+        }
+        
+        if(fabs(sum_gt-sum_nee)>0.001){
+            std::cout<<"Error!"<<std::endl;
         }
 
-        {
-
-        LightPathVertex v1;
-        LightPathVertex v2;
-        LightPathVertex v3;
-
-        lc.push_back(v1);
-        lc.push_back(v2);
-        lc.push_back(v3);
-
+        if(fabs(sum_gt-sum_lt)>0.001){
+            std::cout<<"Error!"<<std::endl;
         }
 
+        RandomSampler s(0);
+
+        auto cc = cp.connect_light_path(s,vmid);
 
 
+
+
+        return true;
 
     }
-*/
+
 
     float compute_area_pdf(const LightPathVertex& v, const LightPathVertex& v_from, const Vec3& from_from, bool transposed) const {
         //TODO: account for transposed
@@ -119,7 +178,6 @@ class VCM : public Renderer{
         float cosTheta = fabs(dot(wi,v.it.g_normal));
 
         float p = v_from.bxdf->pdf(wo,wi,v_from.it);
-        float rr = russian_roulette(v_from.bxdf->eval(wo,wi,v_from.it));
 
         return compute_area_pdf(p,r*r,cosTheta);
     }
@@ -178,7 +236,7 @@ class VCM : public Renderer{
         Vec3 wi = dir;
 
         float p = ll.bxdf->pdf(wo,wi,ll.it);
-        p*= russian_roulette(ll.bxdf->eval(wo,wi,ll.it));
+        p*= russian_roulette(ll.bxdf->eval(wo,wi,ll.it)/p);
         //lc.p_lt_acc = ll.p_lt_acc*fabs(dot(dir,lc.it.g_normal))/(r*r);
         float cos_theta = fabs(dot(dir,lc.it.g_normal));
         lc.p_lt_acc =  p*cos_theta/(r*r);
@@ -186,7 +244,7 @@ class VCM : public Renderer{
         } else {
             Vec3 wi = dir;
             //TODO: don't hardcode!
-            float p = ll.p_lt_acc*fabs(dot(wi,ll.it.g_normal))/M_PI;
+            float p = 0.5*fabs(dot(wi,ll.it.g_normal))/M_PI;
             float cos_theta = fabs(dot(wi,lc.it.g_normal));
             lc.p_lt_acc = p*cos_theta/(r*r);
         }
@@ -226,6 +284,7 @@ class VCM : public Renderer{
         float sum = 0.0;
 
         sum+=lc.at(0).p_lt_acc;
+        
         for(int i = lc.size()-2;i<lc.size()-1; i++){
             sum+=lc.at(i).p_pt_acc*lc.at(i+1).p_lt_acc;
             if(std::isnan(sum)){
@@ -247,7 +306,7 @@ class VCM : public Renderer{
     }
 
     int samples;
-
+    int max_path_length;
     Vec3 render_sky(const Ray& r) const {
         return Vec3(.0);
     }
@@ -281,13 +340,15 @@ class VCM : public Renderer{
         path.push_back(lpv);
 
 
+
+
         Intersection intersection;
         Intersection prev_intersection;
         Vec3 mul = lps.radiance/lps.pdf;
 
         RgbImage& image = scene.camera->get_image();
         float old_p = lps.angle_pdf;
-        for(int i = 0; i<32; i++){
+        for(int i = 0; i<max_path_length-1; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
             if(!intersected){
                 return path;
@@ -299,7 +360,7 @@ class VCM : public Renderer{
 
                 LightPathVertex lpv;
                 lpv.it = intersection;
-                lpv.bxdf = bsdf.get();
+                lpv.bxdf = bsdf;
 
                 {
 
@@ -351,14 +412,28 @@ class VCM : public Renderer{
                     new_lp.at(new_lp.size()-2).p_pt_acc = compute_area_pdf(new_lp.at(new_lp.size()-2), new_lp.at(new_lp.size()-1), cc.pos,false);
 
                     }
-                    //TODO: check
-                    new_lp.at(new_lp.size()-1).p_pt_acc = 1.0/cc.factor; //todo: add factor
 
                     Ray shadow_ray(intersection.hitpoint,
                         normalized(cc.pos-intersection.hitpoint),
                             length(cc.pos-intersection.hitpoint)-2.0*EPS);
 
                     shadow_ray.o = shadow_ray.o+shadow_ray.d*EPS;
+
+
+                    //TODO: check
+
+
+                    LightPathVertex cv;
+                    cv.it=Intersection();
+                    cv.it.hitpoint = cc.pos;
+                    float p_cam = scene.camera->pdf(new_lp.back().it.hitpoint);                    
+                    new_lp.at(new_lp.size()-1).p_pt_acc = compute_area_pdf(p_cam, 
+                    lensqr(cc.pos-intersection.hitpoint), 
+                    fabs(dot(shadow_ray.d,new_lp.back().it.g_normal)));
+                    
+                    new_lp.push_back(cv);
+                    new_lp.back().p_lt_acc = 1.0f;
+                    new_lp.back().p_pt_acc = 1.0f;
 
                     if(bsdf->non_zero(intersection,ray.d*(-1.0),shadow_ray.d) && cc.i >-1){
                     if(!scene.primitive->intersect_any(shadow_ray)){
@@ -372,8 +447,7 @@ class VCM : public Renderer{
                         color = color*factor;
                         color = color*cc.factor;
 
-                        //note: cameras have lens with zero area
-
+                        //note: cameras have lens with zero area, so we don't need the last vertex
                         float pdf_sum = 0.0;
                         LightPath nlp  = pdfSum(LightPath(), new_lp,pdf_sum);
                         float w_mis;
@@ -390,6 +464,7 @@ class VCM : public Renderer{
                             std::cout<<"NOO222"<<std::endl;
                         }
                         //MIS
+                        //w_mis = 0.33333f;
                         color = color*w_mis;
                         if(std::isnan(color.x) ||std::isnan(color.y)  || std::isnan(color.z)){
                             std::cout<<"What :("<<std::endl;
@@ -397,7 +472,9 @@ class VCM : public Renderer{
 
 
                         Vec3* px = image.get_pixel(cc.i,cc.j);
-
+                        if(color.x<0.0f || color.y<0.0f || color.z<0.0f){
+                            std::cout<<"NEGATORIAL"<<std::endl;
+                        }
                         #pragma omp atomic
                         (*px).x += color.x;
 
@@ -422,8 +499,7 @@ class VCM : public Renderer{
                 Vec3 eval_pt = bsdf->eval(sample.wi, ray.d*(-1.0),intersection);
                 p_pdf*=russian_roulette(eval_pt/p_pdf);
 
-                //TODO: no *=?
-                path.back().p_pt_acc =p_pdf*r2/c;
+                path.back().p_pt_acc =p_pdf*c/r2;
 
                 }
 
@@ -438,7 +514,9 @@ class VCM : public Renderer{
                 old_p = p;
 
                 mul = mul*eval/p* correcting_factor * fabs(dot(intersection.g_normal,sample.wi)) / fabs(dot(intersection.normal,sample.wi));
-
+                if(mul.x<0.0f || mul.y<0.0f || mul.z<0.0f){
+                    std::cout<<"WRONG AGAIN"<<std::endl;
+                }
                 ray = Ray(intersection.hitpoint, sample_direction);
                 ray.o = ray.o+ray.d*EPS;
                 prev_intersection = intersection;
@@ -450,17 +528,14 @@ class VCM : public Renderer{
 
     }
 
-    float get_p_from_camera(Intersection& it){
-        //todo
-    }
-
     Vec3 integrate(const Scene& scene, const Vec2& coords, Sampler& sampler, int n_sample=0) const {
-        float angular_pdf = 0.0;
-
+        float angular_pdf=0.0f;
         auto light_path = lightpaths.at(n_sample);
 
 
         Ray ray = scene.camera->get_ray(coords,angular_pdf);
+        angular_pdf = scene.camera->pdf(ray.o+ray.d);
+        
         Intersection intersection;
         Vec3 col(0.0);
         Vec3 mul(1.0);
@@ -480,7 +555,7 @@ class VCM : public Renderer{
 
         //TODO: convert the probability factor into a
 
-        for(int i = 0; i<MAX_PATH_LENGTH; i++){
+        for(int i = 0; i<max_path_length; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
 
 
@@ -502,8 +577,10 @@ class VCM : public Renderer{
                     std::cout<<"whaaaaa"<<std::endl;
                 }
 
+
                 lv.it = intersection;
-                lv.bxdf = bsdf.get();
+                lv.bxdf = bsdf;
+
                 path.push_back(lv);
 
                 if(bsdf->is_emitter()){
@@ -515,12 +592,23 @@ class VCM : public Renderer{
                         //float p_bsdf_nee  = scene.light->pdf()*(r*r)/bsdf_cos;
                         Vec3 rad = bsdf->emit(ray.d*(-1.0),intersection);
                         col = col + mul*rad;
+                        if(mul.x<0.0f || mul.y<0.0f || mul.z <0.0f){
+                            std::cout<<"NEGATORIAL"<<std::endl;
+                        }
                     } else {
                         auto lid = intersection.primitive->get_light()->get_group();
                         float p_nee = scene.light->pdf(lid.first,lid.second, intersection.texture_coords,ray.o);
 
                         Vec3 rad = bsdf->emit(ray.d*(-1.0),intersection);
                         path.back().p_lt_acc = p_nee;
+                        if(path.size()>2){
+                            LightPathVertex& v = path.at(path.size()-2);
+                            float cosTheta = fabs(dot(normalized(v.it.hitpoint-path.back().it.hitpoint),v.it.g_normal));
+                            float r2 = lensqr(v.it.hitpoint-path.back().it.hitpoint);
+                            float revPdf = fabs(dot(normalized(v.it.hitpoint-path.back().it.hitpoint),path.back().it.g_normal))/(2.0*M_PI);
+                            //TODO: don't hardcode
+                            path.at(path.size()-2).p_lt_acc = compute_area_pdf(revPdf, r2, cosTheta);
+                        }
                         float sum = 0.0;
                         LightPath lp = pdfSum(path, LightPath(), sum);
                         float pdf = lp.back().p_pt_acc;
@@ -544,6 +632,8 @@ class VCM : public Renderer{
                         if(w_mis>1.0){
                             std::cout<<"NOO222"<<std::endl;
                         }
+                        //w_mis=0.333333f;
+                        //w_mis = 0.0f;
                         col = col + mul*rad*w_mis;
                         if(std::isnan(col.x)||std::isnan(col.y)|| std::isnan(col.z)){
                             std::cout<<"whatttt2"<<std::endl;
@@ -555,21 +645,49 @@ class VCM : public Renderer{
 
 
 
+
                 DirectionalSample sample = bsdf->sample(sampler, ray.d*(-1.0), intersection);
 
                 Vec3 sample_direction = sample.wi;
                 p = sample.pdf;
 
+                if(path.size()>2){
+                    LightPathVertex& v = path.at(path.size()-2);
+                    //TODO: Transpose
+                    Vec3 wo = sample.wi;
+                    Vec3 wi = v.it.hitpoint-path.back().it.hitpoint;
+                    float r2 = lensqr(wi);
+                    wo = normalized(wo);
+                    wi = wi/sqrt(r2);
+                    float cosTheta = fabs(dot(wi,v.it.g_normal));
+                    float revPdf = bsdf->pdf(wo,wi,path.back().it);
+                    v.p_lt_acc = compute_area_pdf(revPdf, r2, cosTheta);
+                }
+
 
                 /* BDPTConnect */
 
-                if(!sample.delta){
+                if(path.size()<=max_path_length && !sample.delta){
 
                     LightPath n_lp;
 
                     for(int lv_idx = 0; lv_idx<1; lv_idx++){
                         auto lv = light_path.at(lv_idx);
                         n_lp.push_back(lv);
+                        
+                        if(path.size()>2){
+                            LightPathVertex& v = path.at(path.size()-2);
+                            //TODO: Transpose
+                            Vec3 wo = lv.it.hitpoint - path.back().it.hitpoint;
+                            Vec3 wi = v.it.hitpoint - path.back().it.hitpoint;
+                            float r2 = lensqr(wi);
+                            wo = normalized(wo);
+                            wi = wi/sqrt(r2);
+                            float cosTheta = fabs(dot(wi,v.it.g_normal));
+                            float revPdf = bsdf->pdf(wo,wi,path.back().it);
+                            v.p_lt_acc = compute_area_pdf(revPdf, r2, cosTheta);
+                        }
+
                         LightSample ls;
                         ls.delta = false;
                         ls.infinite = false;
@@ -632,6 +750,7 @@ class VCM : public Renderer{
                             if(w_mis>1.0){
                                 std::cout<<"NOO222"<<std::endl;
                             }
+                            //w_mis = 0.33333f;
                             col =col+ mul*rad*eval1*w_mis/p_nee;
                             if(std::isnan(col.x)||std::isnan(col.y)|| std::isnan(col.z)){
                             std::cout<<"whatttt3"<<std::endl;
@@ -648,7 +767,7 @@ class VCM : public Renderer{
 
 
                 } else {
-                    sampled_delta = true;
+                    sampled_delta = sample.delta;
                 }
 
                 /* MIS */
@@ -681,10 +800,13 @@ class VCM : public Renderer{
     }
 
 public:
-    VCM(const RenderSettings& rs): samples(rs.spp) {}
+    VCM(const RenderSettings& rs): samples(rs.spp), max_path_length(rs.max_path_length) {}
 
     static const char* name(){
         return "VCM";
+    }
+    void test(){
+        testDL();
     }
 
     void render(Scene& sc, std::string filename) {

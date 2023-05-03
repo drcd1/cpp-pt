@@ -35,7 +35,7 @@ class PurePt : public Renderer{
         Intersection intersection;
         Vec3 col(0.0);
         Vec3 mul(1.0);
-        for(int i = 0; i<32; i++){
+        for(int i = 0; i<2; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
             if(!intersected){
                 col = col + mul*render_sky(ray,scene);

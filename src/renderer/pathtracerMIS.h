@@ -17,7 +17,7 @@
 namespace cpppt{
 class PathtracerMIS : public Renderer{
     int samples;
-
+    int max_path_length;
     #ifndef NO_GUI
     std::vector<int> counter;
     int total_pixels;
@@ -45,7 +45,7 @@ class PathtracerMIS : public Renderer{
         bool sampled_delta = true;
         float p = 1.0;
         float rr = 1.0;
-        for(int i = 0; i<32; i++){
+        for(int i = 0; i<max_path_length; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
             if(!intersected){
                 //only infinite not delta lights
@@ -93,6 +93,9 @@ class PathtracerMIS : public Renderer{
                     break; //emitters do not reflect!
                 }
                 sampled_delta = false;
+
+                if(i==max_path_length-1)
+                    break;
 
 
 
@@ -187,7 +190,7 @@ public:
     }
 #endif
 
-    PathtracerMIS(const RenderSettings& rs): samples(rs.spp) {}
+    PathtracerMIS(const RenderSettings& rs): samples(rs.spp), max_path_length(rs.max_path_length) {}
 
     void render(Scene& sc, std::string filename) {
         RgbImage* image= &(sc.camera->get_image());

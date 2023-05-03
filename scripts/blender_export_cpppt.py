@@ -12,7 +12,7 @@ import shutil
 # each mesh has only one material
 # modifiers applied
     
-path = 'D:/cpp-pt/scenes/scene_hdr_real/'
+path = '~/cpp-pt/scenes/ring/'
 filename = "scene"
 
 def save_tex(node):

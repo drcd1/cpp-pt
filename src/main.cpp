@@ -41,6 +41,10 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image.h>
 #include <stb_image_write.h>
+#define TINYEXR_USE_MINIZ 0
+#define TINYEXR_USE_STB_ZLIB 1
+#define TINYEXR_IMPLEMENTATION
+#include <tinyexr.h>
 
 //NOTE: sometimes, sample is not zero, but prob is zero?!
 //I think we are dealing with this in the renderer by discarding invalid samples
@@ -115,6 +119,10 @@ int main(int argc, char** argv){
 
 
     //DummyRenderer renderer;
+
+    if(auto dn = std::dynamic_pointer_cast<VCM>(renderer)){
+        dn->test();
+    }
 
 
     using std::chrono::high_resolution_clock;

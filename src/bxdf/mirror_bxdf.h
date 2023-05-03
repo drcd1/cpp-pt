@@ -22,6 +22,7 @@ class MirrorBxDF: public BxDF{
             tmp.wi =   reflect(wo,it.normal);
             tmp.delta = true;
             tmp.pdf = 1.0;
+            return tmp;
         };
 
         float pdf(const Vec3& wo, const Vec3& wi,const Intersection& it) const override {

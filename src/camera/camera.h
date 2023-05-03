@@ -23,7 +23,7 @@ public:
 
     virtual RgbImage& get_image() = 0;
     virtual CameraConnection connect_light_path(Sampler&, const Intersection&) const = 0;
-    virtual float pdf(const Vec3& pt, const Vec3& normal) const = 0;
+    virtual float pdf(const Vec3& pt) const = 0;
 
 };
 

@@ -24,6 +24,7 @@ struct RenderSettings{
     int resY = 256;
     std::string scene_name = "";
     std::string output_name = "";
+    int max_path_length = 32;
     RT_ENGINE rt_engine=RT_ENGINE::EMBREE;
 };
 

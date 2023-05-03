@@ -59,7 +59,8 @@ if(VICKYR_DIR!=""):
 if(IMGUI_DIR!=""):
     include_dir_tools+=[IMGUI_DIR, os.path.join(IMGUI_DIR, "backends")]
 
-
+if(TINYEXR_DIR!=""):
+    include_dir += [TINYEXR_DIR]
 
 
 
