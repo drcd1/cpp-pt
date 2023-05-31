@@ -103,7 +103,7 @@ class PathtracerMLT : public Renderer{
     }
 
     float rF(const Vec3& radiance) const {
-        return std::max(radiance.x,std::max(radiance.y,radiance.z));
+        return radiance.x+radiance.y+radiance.z;
     }
 
     float get_cdf(int i, const std::vector<float>& cdf) const {
@@ -160,12 +160,12 @@ public:
         RgbImage* image= &(sc.camera->get_image());
         Vec2i res = image->res;
 
-        int mChains = res.x*res.y;
-        int nBootstrap = mChains;
+        int mChains = 32;
+        int nBootstrap = res.x*res.y*8;
         std::vector<float> cdf(nBootstrap);
         std::vector<Vec3> values(nBootstrap);
         std::vector<std::vector<float>> record(nBootstrap);
-        int nMutations = samples*samples;
+        int nMutations = samples*samples*res.x*res.y/mChains;
 
         #pragma omp parallel for
         for(int i = 0; i<nBootstrap; i++){
@@ -182,12 +182,16 @@ public:
             cdf[i] = cdf[i-1]+cdf[i];
         }
 
+        float weight = float(res.x*res.y)/float(mChains*nMutations);
+        float lcdf = cdf.back()/nBootstrap;
+
+
+
         #pragma omp parallel for
-        for(int i = 0; i<res.x; i++){
+        for(int i = 0; i<mChains; i++){
             RandomSampler s(i);
             if(i%50==0)
                 std::cout<<"rendering line "<<i<<std::endl;
-        for(int jidx = 0; jidx<res.y; jidx++){
         //for each chain
 
             float ecs = s.sample();
@@ -198,12 +202,12 @@ public:
             mlts.set_sample(record[j]);
             Vec3 value = values[j];
             float v = rF(value);
-            add_image(image, mlts.sample_vector()[0],mlts.sample_vector()[1], (value/v)*cdf.back()/float(res.x*res.y*nMutations));
+            add_image(image, mlts.sample_vector()[0],mlts.sample_vector()[1], (value/v)*lcdf*weight);
 
 
             for(int k = 1; k<nMutations; k++){
                // mlts.mutate();
-               // add_image(image, mlts.old_sample_vector()[0],mlts.old_sample_vector()[1], (value/v)*cdf.back()/float(res.x*res.y*nMutations));
+               // add_image(image, mlts.old_sample_vector()[0],mlts.old_sample_vector()[1], (value/v)*lcdf*weight);
               //  mlts.reject();
               //  continue;
                 mlts.mutate();
@@ -222,11 +226,11 @@ public:
                     v = new_v;
                     value = new_value;
                     mlts.accept();
-                    add_image(image, mlts.sample_vector()[0],mlts.sample_vector()[1], (value*(cdf.back()/v))/float(res.x*res.y*nMutations));
+                    add_image(image, mlts.sample_vector()[0],mlts.sample_vector()[1], (value*(lcdf/v))*weight);
                 } else {
 
-                    add_image(image, mlts.old_sample_vector()[0],mlts.old_sample_vector()[1], (value*(cdf.back()/v))*(1.0-alpha)/float(res.x*res.y*nMutations));
-                    add_image(image, mlts.sample_vector()[0],mlts.sample_vector()[1], (new_value*(cdf.back())/new_v)*alpha/float(res.x*res.y*nMutations));
+                    add_image(image, mlts.old_sample_vector()[0],mlts.old_sample_vector()[1], (value*(lcdf/v))*(1.0-alpha)*weight);
+                    add_image(image, mlts.sample_vector()[0],mlts.sample_vector()[1], (new_value*(lcdf)/new_v)*alpha*weight);
                     float r1 = s.sample();
                     if(r1<alpha){
                         v = new_v;
@@ -238,7 +242,6 @@ public:
                 }
             }
 
-        }
         }
 
 

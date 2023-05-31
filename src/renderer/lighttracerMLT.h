@@ -9,7 +9,9 @@
 #include <shape/intersection.h>
 #include <scene.h>
 #include <math/sampler.h>
+#include <bxdf/glossy_bxdf.h>
 #include <omp.h>
+#include <memory.h>
 #include <iostream>
 namespace cpppt{
 class LighttracerMLT: public Renderer{
@@ -28,7 +30,8 @@ class LighttracerMLT: public Renderer{
 
     static float russian_roulette(const Vec3& col){
         //Todo: better rr
-        return (fabs(col.x*0.2 + col.y*0.5 +col.z*0.3))*0.5 + 0.4;
+        return std::min(1.0,(fabs(col.x*0.2 + col.y*0.5 +col.z*0.3))*0.5 + 0.4);
+
     }
 
 
@@ -37,7 +40,7 @@ class LighttracerMLT: public Renderer{
         for(auto v: radiances){
             radiance = radiance + v.radiance;
         }
-        return std::max(radiance.x,std::max(radiance.y,radiance.z));
+        return radiance.x+radiance.y+radiance.z;
     }
 
     float get_cdf(int i, const std::vector<float>& cdf) const {
@@ -72,25 +75,25 @@ class LighttracerMLT: public Renderer{
         }
     }
 
-
+    int max_path_length = 32;
     RadianceSamples integrate(const Scene& scene, Sampler& sampler) const {
 
         RadianceSamples ret;
 
         LightPathStart lps = scene.light->sample(sampler);
         Ray ray(lps.position,lps.direction);
+        ray.o = ray.o+ray.d*EPS;
 
         Intersection intersection;
         Intersection prev_intersection;
-        Vec3 col = lps.radiance;
-        Vec3 mul = lps.radiance;
+
+        Vec3 mul = lps.radiance/lps.pdf;
         bool sampled_delta = false;
 
         RgbImage& image = scene.camera->get_image();
-        for(int i = 0; i<32; i++){
+        for(int i = 0; i<max_path_length-1; i++){
             bool intersected = scene.primitive->intersect(ray,&intersection);
             if(!intersected){
-
                 break;
             } else {
                 auto bsdf = intersection.get_bxdf();
@@ -102,46 +105,36 @@ class LighttracerMLT: public Renderer{
 
                 Vec3 sample_direction = sample.wi;
                 float p = sample.pdf;
-                Vec3 eval = bsdf->eval(ray.d*(-1.0), sample_direction, intersection)*
-                            fabs(dot(ray.d,intersection.normal)/dot(ray.d,intersection.g_normal));
+
+                Vec3 eval = bsdf->eval(ray.d*(-1.0), sample_direction, intersection);
+
+                float correcting_factor = fabs(dot(intersection.normal,ray.d))/fabs(dot(intersection.g_normal,ray.d));
 
 
                 /* Connect to camera */
                 if(!sample.delta){
                     CameraConnection cc = scene.camera->connect_light_path(sampler, intersection);
-
                     Ray shadow_ray(intersection.hitpoint,
                         normalized(cc.pos-intersection.hitpoint),
                             length(cc.pos-intersection.hitpoint));
+                    shadow_ray.o=shadow_ray.o+shadow_ray.d*EPS;
 
                     if(bsdf->non_zero(intersection,ray.d*(-1.0),shadow_ray.d) && cc.i >-1){
                     if(!scene.primitive->intersect_any(shadow_ray)){
-                        Vec3 color =  mul*bsdf->eval(
-                            ray.d*(-1.0),
-                            shadow_ray.d,
-                            intersection
-                        ) * fabs(dot(ray.d,intersection.normal)/dot(ray.d,intersection.g_normal));
 
-                        //color = color/ dot(shadow_ray.d, intersection.normal);
-                        if(std::isnan(color.x)||std::isnan(color.y)||std::isnan(color.z)){
-                            throw(std::runtime_error("We have nans!"));
-                        }
-                        color = color*cc.factor;
-                        ret.push_back(RadianceSample(cc.i,cc.j,color));
-                        /*
+
+                        Vec3 color =  mul*bsdf->eval(
+                            normalized(ray.d*(-1.0)),
+                            normalized(shadow_ray.d),
+                            intersection
+                        );// * factor;// * correcting_factor * fabs(dot(intersection.g_normal,shadow_ray.d)) / fabs(dot(intersection.normal,shadow_ray.d));
+
+                        color = color*cc.factor;//(0.120/0.154);
+
                         Vec3* px = image.get_pixel(cc.i,cc.j);
                         //*px = Vec3(1.0,0.0,1.0);
 
-
-
-                        #pragma omp atomic
-                        (*px).x += color.x;
-
-                        #pragma omp atomic
-                        (*px).y += color.y;
-                        #pragma omp atomic
-                        (*px).z += color.z;
-                        */
+                        ret.push_back({cc.i,cc.j,color});
 
                     }
                     }
@@ -153,15 +146,16 @@ class LighttracerMLT: public Renderer{
 
 
                 if(i>2){
-                    float rr = russian_roulette(eval);
+                    float rr = russian_roulette(eval/p);
                     if(sampler.sample() > rr) {
                         break;
                     }
                     p = p*rr;
                 }
 
-                mul = mul*eval/p;
+                mul = mul*eval/p;//* correcting_factor * fabs(dot(intersection.g_normal,sample.wi)) / fabs(dot(intersection.normal,sample.wi));
                 ray = Ray(intersection.hitpoint, sample_direction);
+                ray.o=ray.o+ray.d*EPS;
                 prev_intersection = intersection;
             }
         }
@@ -190,18 +184,16 @@ public:
         Vec2i res = image->res;
 
 
-        int mChains = res.x*res.y;
-        int nBootstrap = mChains;
+        int mChains = 32;
+        int nBootstrap = res.x*res.y;
         std::vector<float> cdf(nBootstrap);
         std::vector<RadianceSamples> values(nBootstrap);
         std::vector<std::vector<float>> record(nBootstrap);
-        int nMutations = samples*samples;
+        int nMutations = samples*samples*res.x*res.y/32;
 
         #pragma omp parallel for
         for(int i = 0; i<nBootstrap; i++){
             MLTSampler s(i);
-            float r1 = s.sample();
-            float r2 = s.sample();
 
             values[i] = integrate(sc, s);
             cdf[i] = rF(values[i]);
@@ -212,15 +204,17 @@ public:
             cdf[i] = cdf[i-1]+cdf[i];
         }
 
+        float lcdf = cdf.back()/nBootstrap;
+        std::cout<<"lcdf: "<<lcdf<<std::endl;
+       // lcdf = 1.0f;
+
+        float weight = (float(res.x*res.y)/float(mChains*nMutations));
+
         #pragma omp parallel for
-        for(int i = 0; i<res.x; i++){
-
-
+        for(int i = 0; i<mChains; i++){
             RandomSampler s(i);
             if(i%50==0)
                 std::cout<<"rendering line "<<i<<std::endl;
-            for(int jidx = 0; jidx<res.y; jidx++){
-            {
             //for each chain
 
             float ecs = s.sample();
@@ -231,8 +225,15 @@ public:
             float v = rF(value);
             if(v <= 1e-8)
                 v=1e-8;
-                
-            float weight = float(1.0/(mChains*nMutations));
+
+
+
+
+            for(auto rs: value){
+                add_image(image, rs.i,rs.j,rs.radiance*lcdf/v*weight);
+            }
+
+
             for(int k = 1; k<nMutations; k++){
                 mlts.mutate();
 
@@ -242,19 +243,19 @@ public:
                 float new_v = rF(new_value);
                 float alpha = new_v/v;
 
-                if(std::isnan(cdf.back()/v)||std::isnan(cdf.back()/new_v)){
+                if(std::isnan(lcdf/v)||std::isnan(lcdf/new_v)){
                     throw(std::runtime_error("We have nans?!"));
                 }
 
-                float f1 = cdf.back()/v;
-                float f2 = cdf.back()/new_v;
-                if(v<1e-5){
+                float f1 = lcdf/v;
+                float f2 = lcdf/new_v;
+                if(v<1e-7){
                     f1 = 0.0;
                 }
-                if(new_v <1e-5){
+                if(new_v <1e-7){
                     alpha = 0.0;
                     f2 = 0.0;
-                    new_v = 1e-8;
+                    new_v = 1e-7;
                 }
 
                 if(alpha>1.0){
@@ -266,10 +267,10 @@ public:
                     }
                 } else {
                     for(auto rs: value){
-                        add_image(image, rs.i,rs.j,rs.radiance*(f1)*weight);
+                        add_image(image, rs.i,rs.j,rs.radiance*(f1)*weight*(1.0-alpha));
                     }
                     for(auto rs: new_value){
-                        add_image(image, rs.i,rs.j,rs.radiance*(f2)*weight);
+                        add_image(image, rs.i,rs.j,rs.radiance*(f2)*weight*alpha);
                     }
                     float r1 = s.sample();
                     if(r1<alpha){
@@ -282,9 +283,9 @@ public:
 
                 }
             }
-            }
-            }
+
         }
+
 
         /*
 

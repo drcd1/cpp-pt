@@ -21,7 +21,7 @@ class Lighttracer : public Renderer{
     }
 
 
-    void integrate(const Scene& scene, Sampler& sampler, float factor) const {
+    void integrate(const Scene& scene, Sampler& sampler, float factor, float* avg) const {
 
 
 
@@ -90,6 +90,8 @@ class Lighttracer : public Renderer{
                         #pragma omp atomic
                         (*px).z += color.z;
 
+                        *avg+=color.x+color.y+color.z;
+
 
                     }
                     }
@@ -124,6 +126,7 @@ public:
     void render(Scene& sc, std::string filename) {
         RgbImage* image= &(sc.camera->get_image());
         Vec2i res = image->res;
+        std::vector<float> avgs(omp_get_max_threads(),0.0f);
 
         #pragma omp parallel for
         for(int i = 0; i<res.x; i++){
@@ -136,13 +139,20 @@ public:
                 Vec3 acc(0.0);
                 for(int k = 0; k<samples; k++){
                     for(int l = 0; l<samples; l++){
-                        integrate(sc,s,1.0/(samples*samples));
+                        integrate(sc,s,1.0/(samples*samples), &avgs.at(omp_get_thread_num()));
                     }
                 }
 
             }
         }
 
+        float totavg  = 0.0f;
+
+        for(int i = 0; i<avgs.size(); i++){
+            totavg+=avgs.at(i)/(res.x*res.y);
+        }
+
+        std::cout<<"Totavg = "<<totavg;
         /*
 
         #pragma omp parallel for
