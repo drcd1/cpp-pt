@@ -1,6 +1,7 @@
 #ifndef CPPPT_SCENE
 #define CPPPT_SCENE
 
+#include <memory>
 #include <camera/camera.h>
 #include <primitive/primitive.h>
 #include <primitive/bvh.h>
@@ -11,7 +12,8 @@
 #include <texture/texture.h>
 #include <fstream>
 #include <sstream>
-#include <memory>
+
+
 namespace cpppt{
 
 struct SceneData{

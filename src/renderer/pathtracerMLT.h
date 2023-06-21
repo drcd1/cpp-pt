@@ -192,8 +192,7 @@ public:
             RandomSampler s(i);
             if(i%50==0)
                 std::cout<<"rendering line "<<i<<std::endl;
-        //for each chain
-
+        //for each chaic
             float ecs = s.sample();
             int j = choose_bootstrap(ecs,cdf);
 

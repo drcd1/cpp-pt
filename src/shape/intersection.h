@@ -21,6 +21,7 @@ struct Intersection{
     Vec3 hitpoint;
     bool computed_normal = false;
     const PrimitiveLeaf* primitive;
+
     std::shared_ptr<Material> material;
     std::shared_ptr<BxDF> get_bxdf(){
         if(!computed_normal){

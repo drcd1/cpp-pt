@@ -184,12 +184,12 @@ public:
         Vec2i res = image->res;
 
 
-        int mChains = 32;
+        int mChains = 1;
         int nBootstrap = res.x*res.y;
         std::vector<float> cdf(nBootstrap);
         std::vector<RadianceSamples> values(nBootstrap);
         std::vector<std::vector<float>> record(nBootstrap);
-        int nMutations = samples*samples*res.x*res.y/32;
+        int nMutations = samples*samples*res.x*res.y/mChains;
 
         #pragma omp parallel for
         for(int i = 0; i<nBootstrap; i++){
@@ -237,8 +237,8 @@ public:
             for(int k = 1; k<nMutations; k++){
                 mlts.mutate();
 
-                float r1 = mlts.sample()*2.0-1.0;
-                float r2 = mlts.sample()*2.0-1.0;
+                //float r1 = mlts.sample()*2.0-1.0;
+                //float r2 = mlts.sample()*2.0-1.0;
                 auto new_value = integrate(sc,mlts);
                 float new_v = rF(new_value);
                 float alpha = new_v/v;
